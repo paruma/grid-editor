@@ -6,7 +6,6 @@ import {
   Button,
   Box,
   Stack,
-  Paper,
 } from '@mui/material';
 
 export default function App() {
@@ -33,9 +32,35 @@ export default function App() {
 
   const fetchSamples = () => {
     fetch(`http://localhost:3001/api/tests?contest=${contest}&problem=${problem}`)
-      .then(res => res.json())
-      .then(data => setSamples(data))
-      .catch(console.error);
+      .then(res => {
+        if (!res.ok) {
+          // 存在しないcontest/problemなどでエラーの場合は空配列にしてUI初期化
+          setSamples([]);
+          setSelectedSample(null);
+          setInputContent('');
+          setOutputContent('');
+          setCommentContent('');
+          return null;
+        }
+        return res.json();
+      })
+      .then(data => {
+        if (data) {
+          setSamples(data);
+          setSelectedSample(null);
+          setInputContent('');
+          setOutputContent('');
+          setCommentContent('');
+        }
+      })
+      .catch(() => {
+        // ネットワークエラーも同様に空初期化
+        setSamples([]);
+        setSelectedSample(null);
+        setInputContent('');
+        setOutputContent('');
+        setCommentContent('');
+      });
   };
 
   useEffect(() => {
@@ -50,7 +75,10 @@ export default function App() {
     setSelectedSample(sample.name);
 
     fetch(`http://localhost:3001/api/test/${sample.inFile}`)
-      .then(res => res.text())
+      .then(res => {
+        if (!res.ok) throw new Error('Input file not found');
+        return res.text();
+      })
       .then(text => {
         setInputContent(text);
         setTimeout(() => autoResize(inputRef.current), 0);
@@ -58,7 +86,10 @@ export default function App() {
       .catch(() => setInputContent('Error loading input file'));
 
     fetch(`http://localhost:3001/api/test/${sample.outFile}`)
-      .then(res => res.text())
+      .then(res => {
+        if (!res.ok) throw new Error('Output file not found');
+        return res.text();
+      })
       .then(text => {
         setOutputContent(text);
         setTimeout(() => autoResize(outputRef.current), 0);
