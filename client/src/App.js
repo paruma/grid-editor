@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function App() {
+  // contestは即時更新
+  const [contest, setContest] = useState('abc408');
+
+  // API呼び出しのトリガーになるproblem
+  const [problem, setProblem] = useState('a');
+
+  // 入力欄での編集用ローカルstate
+  const [problemInput, setProblemInput] = useState('a');
+
   const [samples, setSamples] = useState([]);
   const [selectedSample, setSelectedSample] = useState(null);
   const [inputContent, setInputContent] = useState('');
@@ -11,7 +20,6 @@ export default function App() {
   const outputRef = useRef(null);
   const commentRef = useRef(null);
 
-  // 高さ自動調整
   const autoResize = (el) => {
     if (el) {
       el.style.height = 'auto';
@@ -19,9 +27,9 @@ export default function App() {
     }
   };
 
-  // サンプル一覧取得
+  // contest, problemが変わったらサンプル取得
   const fetchSamples = () => {
-    fetch('http://localhost:3001/api/tests')
+    fetch(`http://localhost:3001/api/tests?contest=${contest}&problem=${problem}`)
       .then(res => res.json())
       .then(data => setSamples(data))
       .catch(console.error);
@@ -29,10 +37,11 @@ export default function App() {
 
   useEffect(() => {
     fetchSamples();
-  }, []);
+  }, [contest, problem]);
 
-  // サンプル選択時にファイル読み込み（入力、出力、コメント）
+  // サンプル選択時にファイル読み込み
   const handleSampleClick = (sample) => {
+    console.log(sample);
     setSelectedSample(sample.name);
 
     fetch(`http://localhost:3001/api/test/${sample.inFile}`)
@@ -51,11 +60,8 @@ export default function App() {
       })
       .catch(() => setOutputContent('Error loading output file'));
 
-    fetch(`http://localhost:3001/api/test/${sample.name}.comment`)
-      .then(res => {
-        if (!res.ok) return '';
-        return res.text();
-      })
+    fetch(`http://localhost:3001/api/test/${sample.commentFile}`)
+      .then(res => (res.ok ? res.text() : ''))
       .then(text => {
         setCommentContent(text);
         setTimeout(() => autoResize(commentRef.current), 0);
@@ -63,7 +69,7 @@ export default function App() {
       .catch(() => setCommentContent(''));
   };
 
-  // 保存処理（入力、出力、コメント）
+  // 保存処理
   const handleSave = useCallback(() => {
     if (!selectedSample) return;
     const sample = samples.find(s => s.name === selectedSample);
@@ -81,14 +87,14 @@ export default function App() {
       body: JSON.stringify({ content: outputContent }),
     });
 
-    fetch(`http://localhost:3001/api/test/${sample.name}.comment`, {
+    fetch(`http://localhost:3001/api/test/${sample.commentFile}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: commentContent }),
     });
   }, [samples, selectedSample, inputContent, outputContent, commentContent]);
 
-  // Ctrl+S で保存
+  // Ctrl+Sで保存
   useEffect(() => {
     const handleKeyDown = (e) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -101,14 +107,14 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
-  // 新規サンプル作成
+  // 新規サンプル作成（contest/problem別に作る）
   const handleCreate = () => {
     const base = newSampleName.trim();
     if (!base) return;
 
-    const inFilename = `${base}.in`;
-    const outFilename = `${base}.out`;
-    const commentFilename = `${base}.comment`;
+    const inFilename = `${contest}/${problem}/test/${base}.in`;
+    const outFilename = `${contest}/${problem}/test/${base}.out`;
+    const commentFilename = `${contest}/${problem}/test/${base}.comment`;
 
     fetch(`http://localhost:3001/api/test/${inFilename}`, {
       method: 'POST',
@@ -132,9 +138,37 @@ export default function App() {
     });
   };
 
+  // Problem入力欄でEnter押した時にproblemを更新しAPIを呼ぶ
+  const handleProblemKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      setProblem(problemInput);
+    }
+  };
+
   return (
     <div style={{ padding: '1rem' }}>
       <h1>サンプル一覧</h1>
+
+      <div style={{ marginBottom: '1rem' }}>
+        <label>
+          Contest:{' '}
+          <input
+            value={contest}
+            onChange={e => setContest(e.target.value)}
+            style={{ width: 120 }}
+          />
+        </label>
+        <label style={{ marginLeft: 20 }}>
+          Problem:{' '}
+          <input
+            value={problemInput}
+            onChange={e => setProblemInput(e.target.value)}
+            onKeyDown={handleProblemKeyDown}
+            style={{ width: 30 }}
+          />
+        </label>
+      </div>
 
       <div style={{ marginBottom: '1rem' }}>
         <input
