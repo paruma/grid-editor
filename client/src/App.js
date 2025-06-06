@@ -11,6 +11,7 @@ import {
 
 export default function App() {
   const [contest, setContest] = useState('abc408');
+  const [contestInput, setContestInput] = useState('abc408');
   const [problem, setProblem] = useState('a');
   const [problemInput, setProblemInput] = useState('a');
   const [samples, setSamples] = useState([]);
@@ -40,6 +41,10 @@ export default function App() {
   useEffect(() => {
     fetchSamples();
   }, [contest, problem]);
+
+  useEffect(() => {
+    setContestInput(contest);
+  }, [contest]);
 
   const handleSampleClick = (sample) => {
     setSelectedSample(sample.name);
@@ -113,23 +118,23 @@ export default function App() {
     const outFilename = `${contest}/${problem}/test/${base}.out`;
     const commentFilename = `${contest}/${problem}/test/${base}.comment`;
 
-    fetch(`http://localhost:3001/api/test/${inFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: '' }),
-    });
-
-    fetch(`http://localhost:3001/api/test/${outFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: '' }),
-    });
-
-    fetch(`http://localhost:3001/api/test/${commentFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: '' }),
-    }).then(() => {
+    Promise.all([
+      fetch(`http://localhost:3001/api/test/${inFilename}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: '' }),
+      }),
+      fetch(`http://localhost:3001/api/test/${outFilename}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: '' }),
+      }),
+      fetch(`http://localhost:3001/api/test/${commentFilename}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: '' }),
+      })
+    ]).then(() => {
       setNewSampleName('');
       fetchSamples();
     });
@@ -142,6 +147,13 @@ export default function App() {
     }
   };
 
+  const handleContestKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      setContest(contestInput);
+    }
+  };
+
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>サンプル一覧</Typography>
@@ -149,8 +161,9 @@ export default function App() {
       <Stack direction="row" spacing={2} mb={2} alignItems="center">
         <TextField
           label="Contest"
-          value={contest}
-          onChange={e => setContest(e.target.value)}
+          value={contestInput}
+          onChange={e => setContestInput(e.target.value)}
+          onKeyDown={handleContestKeyDown}
           size="small"
         />
         <TextField
@@ -204,7 +217,11 @@ export default function App() {
                 multiline
                 fullWidth
                 minRows={12}
-                sx={{ fontFamily: 'monospace' }}
+                InputProps={{
+                  sx: {
+                    fontFamily: 'monospace',
+                  }
+                }}
               />
             </Box>
             <Box flex={1}>
@@ -220,7 +237,11 @@ export default function App() {
                 multiline
                 fullWidth
                 minRows={12}
-                sx={{ fontFamily: 'monospace' }}
+                InputProps={{
+                  sx: {
+                    fontFamily: 'monospace',
+                  }
+                }}
               />
             </Box>
           </Stack>
