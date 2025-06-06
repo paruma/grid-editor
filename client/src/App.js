@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Container,
+  TextField,
+  Typography,
+  Button,
+  Box,
+  Stack,
+  Paper,
+} from '@mui/material';
 
 export default function App() {
-  // contestは即時更新
   const [contest, setContest] = useState('abc408');
-
-  // API呼び出しのトリガーになるproblem
   const [problem, setProblem] = useState('a');
-
-  // 入力欄での編集用ローカルstate
   const [problemInput, setProblemInput] = useState('a');
-
   const [samples, setSamples] = useState([]);
   const [selectedSample, setSelectedSample] = useState(null);
   const [inputContent, setInputContent] = useState('');
@@ -27,7 +30,6 @@ export default function App() {
     }
   };
 
-  // contest, problemが変わったらサンプル取得
   const fetchSamples = () => {
     fetch(`http://localhost:3001/api/tests?contest=${contest}&problem=${problem}`)
       .then(res => res.json())
@@ -39,9 +41,7 @@ export default function App() {
     fetchSamples();
   }, [contest, problem]);
 
-  // サンプル選択時にファイル読み込み
   const handleSampleClick = (sample) => {
-    console.log(sample);
     setSelectedSample(sample.name);
 
     fetch(`http://localhost:3001/api/test/${sample.inFile}`)
@@ -69,7 +69,6 @@ export default function App() {
       .catch(() => setCommentContent(''));
   };
 
-  // 保存処理
   const handleSave = useCallback(() => {
     if (!selectedSample) return;
     const sample = samples.find(s => s.name === selectedSample);
@@ -94,7 +93,6 @@ export default function App() {
     });
   }, [samples, selectedSample, inputContent, outputContent, commentContent]);
 
-  // Ctrl+Sで保存
   useEffect(() => {
     const handleKeyDown = (e) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -107,7 +105,6 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
-  // 新規サンプル作成（contest/problem別に作る）
   const handleCreate = () => {
     const base = newSampleName.trim();
     if (!base) return;
@@ -138,7 +135,6 @@ export default function App() {
     });
   };
 
-  // Problem入力欄でEnter押した時にproblemを更新しAPIを呼ぶ
   const handleProblemKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -147,124 +143,110 @@ export default function App() {
   };
 
   return (
-    <div style={{ padding: '1rem' }}>
-      <h1>サンプル一覧</h1>
+    <Container maxWidth="md" sx={{ py: 4 }}>
+      <Typography variant="h4" gutterBottom>サンプル一覧</Typography>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <label>
-          Contest:{' '}
-          <input
-            value={contest}
-            onChange={e => setContest(e.target.value)}
-            style={{ width: 120 }}
-          />
-        </label>
-        <label style={{ marginLeft: 20 }}>
-          Problem:{' '}
-          <input
-            value={problemInput}
-            onChange={e => setProblemInput(e.target.value)}
-            onKeyDown={handleProblemKeyDown}
-            style={{ width: 30 }}
-          />
-        </label>
-      </div>
+      <Stack direction="row" spacing={2} mb={2} alignItems="center">
+        <TextField
+          label="Contest"
+          value={contest}
+          onChange={e => setContest(e.target.value)}
+          size="small"
+        />
+        <TextField
+          label="Problem"
+          value={problemInput}
+          onChange={e => setProblemInput(e.target.value)}
+          onKeyDown={handleProblemKeyDown}
+          size="small"
+          sx={{ width: 100 }}
+        />
+      </Stack>
 
-      <div style={{ marginBottom: '1rem' }}>
-        <input
+      <Stack direction="row" spacing={1} mb={2} alignItems="center">
+        <TextField
           value={newSampleName}
           onChange={e => setNewSampleName(e.target.value)}
-          placeholder="新しいサンプル名（例: sample4）"
+          placeholder="新しいサンプル名"
+          size="small"
         />
-        <button onClick={handleCreate} style={{ marginLeft: '0.5rem' }}>作成</button>
-      </div>
+        <Button variant="outlined" onClick={handleCreate}>作成</Button>
+      </Stack>
 
-      <div>
+      <Stack direction="row" spacing={1} flexWrap="wrap" mb={3}>
         {samples.map(sample => (
-          <button
+          <Button
             key={sample.name}
+            variant={sample.name === selectedSample ? 'contained' : 'outlined'}
+            size="small"
+            sx={{ textTransform: "none" }}
             onClick={() => handleSampleClick(sample)}
-            style={{
-              marginRight: '0.5rem',
-              marginBottom: '0.5rem',
-              backgroundColor: sample.name === selectedSample ? '#ddd' : '',
-            }}
           >
-            {sample.name}
-          </button>
+            {sample.name.toLowerCase()}
+          </Button>
         ))}
-      </div>
+      </Stack>
 
       {selectedSample && (
         <>
-          <h2>{selectedSample}</h2>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <h3>入力ファイル</h3>
-              <textarea
-                ref={inputRef}
+          <Typography variant="h5" gutterBottom>{selectedSample}</Typography>
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <Box flex={1}>
+              <Typography variant="subtitle1">入力ファイル</Typography>
+              <TextField
+                inputRef={inputRef}
                 value={inputContent}
                 onChange={e => {
                   setInputContent(e.target.value);
                   autoResize(e.target);
                 }}
                 onInput={e => autoResize(e.target)}
-                style={{
-                  width: '100%',
-                  minHeight: '150px',
-                  resize: 'none',
-                  overflow: 'hidden',
-                  padding: '0.5rem',
-                  fontFamily: 'monospace',
-                }}
+                multiline
+                fullWidth
+                minRows={12}
+                sx={{ fontFamily: 'monospace' }}
               />
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3>出力ファイル</h3>
-              <textarea
-                ref={outputRef}
+            </Box>
+            <Box flex={1}>
+              <Typography variant="subtitle1">出力ファイル</Typography>
+              <TextField
+                inputRef={outputRef}
                 value={outputContent}
                 onChange={e => {
                   setOutputContent(e.target.value);
                   autoResize(e.target);
                 }}
                 onInput={e => autoResize(e.target)}
-                style={{
-                  width: '100%',
-                  minHeight: '150px',
-                  resize: 'none',
-                  overflow: 'hidden',
-                  padding: '0.5rem',
-                  fontFamily: 'monospace',
-                }}
+                multiline
+                fullWidth
+                minRows={12}
+                sx={{ fontFamily: 'monospace' }}
               />
-            </div>
-          </div>
+            </Box>
+          </Stack>
 
-          <div style={{ marginTop: '1rem' }}>
-            <h3>コメント</h3>
-            <textarea
-              ref={commentRef}
+          <Box mt={3}>
+            <Typography variant="subtitle1">コメント</Typography>
+            <TextField
+              inputRef={commentRef}
               value={commentContent}
               onChange={e => {
                 setCommentContent(e.target.value);
                 autoResize(e.target);
               }}
               onInput={e => autoResize(e.target)}
-              style={{
-                width: '100%',
-                minHeight: '100px',
-                resize: 'none',
-                overflow: 'hidden',
-                padding: '0.5rem',
-                fontFamily: 'monospace',
-              }}
+              multiline
+              fullWidth
+              minRows={6}
+              sx={{ fontFamily: 'monospace' }}
             />
-          </div>
+          </Box>
 
-          <button onClick={handleSave} style={{ marginTop: '1rem' }}>保存</button>
+          <Box mt={2}>
+            <Button variant="contained" onClick={handleSave}>保存</Button>
+          </Box>
         </>
       )}
-    </div>
+    </Container>
   );
 }
