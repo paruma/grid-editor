@@ -110,19 +110,25 @@ export default function App() {
     const sample = samples.find(s => s.name === selectedSample);
     if (!sample) return;
 
-    fetch(`http://localhost:3001/api/test/${sample.inFile}`, {
+    const base = sample.name.trim();
+
+    const inFilename = `${contest}/${problem}/test/${base}.in`;
+    const outFilename = `${contest}/${problem}/test/${base}.out`;
+    const commentFilename = `${contest}/${problem}/test/${base}.comment`;
+
+    fetch(`http://localhost:3001/api/test/${inFilename}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: inputContent }),
     });
 
-    fetch(`http://localhost:3001/api/test/${sample.outFile}`, {
+    fetch(`http://localhost:3001/api/test/${outFilename}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: outputContent }),
     });
 
-    fetch(`http://localhost:3001/api/test/${sample.commentFile}`, {
+    fetch(`http://localhost:3001/api/test/${commentFilename}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ content: commentContent }),
