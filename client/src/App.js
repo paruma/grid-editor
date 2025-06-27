@@ -114,7 +114,7 @@ export default function App() {
 
     const inFilename = `${contest}/${problem}/test/${base}.in`;
     const outFilename = `${contest}/${problem}/test/${base}.out`;
-    const commentFilename = `${contest}/${problem}/test/${base}.comment`;
+    // const commentFilename = `${contest}/${problem}/test/${base}.comment`;
 
     fetch(`http://localhost:3001/api/test/${inFilename}`, {
       method: 'POST',
@@ -128,11 +128,11 @@ export default function App() {
       body: JSON.stringify({ content: outputContent }),
     });
 
-    fetch(`http://localhost:3001/api/test/${commentFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: commentContent }),
-    });
+    // fetch(`http://localhost:3001/api/test/${commentFilename}`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ content: commentContent }),
+    // });
   }, [samples, selectedSample, inputContent, outputContent, commentContent]);
 
   useEffect(() => {
@@ -153,7 +153,7 @@ export default function App() {
 
     const inFilename = `${contest}/${problem}/test/${base}.in`;
     const outFilename = `${contest}/${problem}/test/${base}.out`;
-    const commentFilename = `${contest}/${problem}/test/${base}.comment`;
+    // const commentFilename = `${contest}/${problem}/test/${base}.comment`;
 
     Promise.all([
       fetch(`http://localhost:3001/api/test/${inFilename}`, {
@@ -166,11 +166,11 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: '' }),
       }),
-      fetch(`http://localhost:3001/api/test/${commentFilename}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: '' }),
-      })
+      // fetch(`http://localhost:3001/api/test/${commentFilename}`, {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({ content: '' }),
+      // })
     ]).then(() => {
       setNewSampleName('');
       fetchSamples();
@@ -283,22 +283,7 @@ export default function App() {
             </Box>
           </Stack>
 
-          <Box mt={3}>
-            <Typography variant="subtitle1">コメント</Typography>
-            <TextField
-              inputRef={commentRef}
-              value={commentContent}
-              onChange={e => {
-                setCommentContent(e.target.value);
-                autoResize(e.target);
-              }}
-              onInput={e => autoResize(e.target)}
-              multiline
-              fullWidth
-              minRows={6}
-              sx={{ fontFamily: 'monospace' }}
-            />
-          </Box>
+
 
           <Box mt={2}>
             <Button variant="contained" onClick={handleSave}>保存</Button>
