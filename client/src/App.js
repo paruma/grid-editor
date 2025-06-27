@@ -201,6 +201,7 @@ export default function App() {
           value={contestInput}
           onChange={e => setContestInput(e.target.value)}
           onKeyDown={handleContestKeyDown}
+          onBlur={() => setContest(contestInput)}
           size="small"
         />
         <TextField
@@ -208,6 +209,7 @@ export default function App() {
           value={problemInput}
           onChange={e => setProblemInput(e.target.value)}
           onKeyDown={handleProblemKeyDown}
+          onBlur={() => setProblem(problemInput)}
           size="small"
           sx={{ width: 100 }}
         />
