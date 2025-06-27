@@ -255,7 +255,7 @@ export default function App() {
                 onInput={e => autoResize(e.target)}
                 multiline
                 fullWidth
-                minRows={12}
+                minRows={1}
                 InputProps={{
                   sx: {
                     fontFamily: 'monospace',
@@ -275,7 +275,7 @@ export default function App() {
                 onInput={e => autoResize(e.target)}
                 multiline
                 fullWidth
-                minRows={12}
+                minRows={1}
                 InputProps={{
                   sx: {
                     fontFamily: 'monospace',
