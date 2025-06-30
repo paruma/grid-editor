@@ -17,11 +17,9 @@ export default function App() {
   const [selectedSample, setSelectedSample] = useState(null);
   const [inputContent, setInputContent] = useState('');
   const [outputContent, setOutputContent] = useState('');
-  const [commentContent, setCommentContent] = useState('');
   const [newSampleName, setNewSampleName] = useState('');
   const inputRef = useRef(null);
   const outputRef = useRef(null);
-  const commentRef = useRef(null);
 
   const autoResize = (el) => {
     if (el) {
@@ -30,7 +28,7 @@ export default function App() {
     }
   };
 
-  const fetchSamples = () => {
+  const fetchSamples = useCallback(() => {
     fetch(`http://localhost:3001/api/tests?contest=${contest}&problem=${problem}`)
       .then(res => {
         if (!res.ok) {
@@ -39,7 +37,6 @@ export default function App() {
           setSelectedSample(null);
           setInputContent('');
           setOutputContent('');
-          setCommentContent('');
           return null;
         }
         return res.json();
@@ -50,7 +47,6 @@ export default function App() {
           setSelectedSample(null);
           setInputContent('');
           setOutputContent('');
-          setCommentContent('');
         }
       })
       .catch(() => {
@@ -59,13 +55,12 @@ export default function App() {
         setSelectedSample(null);
         setInputContent('');
         setOutputContent('');
-        setCommentContent('');
       });
-  };
+  }, [contest, problem]);
 
   useEffect(() => {
     fetchSamples();
-  }, [contest, problem]);
+  }, [contest, fetchSamples, problem]);
 
   useEffect(() => {
     setContestInput(contest);
@@ -99,7 +94,7 @@ export default function App() {
     //   headers: { 'Content-Type': 'application/json' },
     //   body: JSON.stringify({ content: commentContent }),
     // });
-  }, [samples, selectedSample, inputContent, outputContent, commentContent]);
+  }, [contest, problem, samples, selectedSample, inputContent, outputContent]);
 
     const handleSampleClick = useCallback((sample) => {
     handleSave();
@@ -126,14 +121,6 @@ export default function App() {
         setTimeout(() => autoResize(outputRef.current), 0);
       })
       .catch(() => setOutputContent('Error loading output file'));
-
-    fetch(`http://localhost:3001/api/test/${sample.commentFile}`)
-      .then(res => (res.ok ? res.text() : ''))
-      .then(text => {
-        setCommentContent(text);
-        setTimeout(() => autoResize(commentRef.current), 0);
-      })
-      .catch(() => setCommentContent(''));
   }, [handleSave]);
 
   useEffect(() => {
