@@ -71,7 +71,38 @@ export default function App() {
     setContestInput(contest);
   }, [contest]);
 
-  const handleSampleClick = (sample) => {
+  const handleSave = useCallback(() => {
+    if (!selectedSample) return;
+    const sample = samples.find(s => s.name === selectedSample);
+    if (!sample) return;
+
+    const base = sample.name.trim();
+
+    const inFilename = `${contest}/${problem}/test/${base}.in`;
+    const outFilename = `${contest}/${problem}/test/${base}.out`;
+    // const commentFilename = `${contest}/${problem}/test/${base}.comment`;
+
+    fetch(`http://localhost:3001/api/test/${inFilename}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: inputContent }),
+    });
+
+    fetch(`http://localhost:3001/api/test/${outFilename}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: outputContent }),
+    });
+
+    // fetch(`http://localhost:3001/api/test/${commentFilename}`, {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ content: commentContent }),
+    // });
+  }, [samples, selectedSample, inputContent, outputContent, commentContent]);
+
+    const handleSampleClick = useCallback((sample) => {
+    handleSave();
     setSelectedSample(sample.name);
 
     fetch(`http://localhost:3001/api/test/${sample.inFile}`)
@@ -103,37 +134,7 @@ export default function App() {
         setTimeout(() => autoResize(commentRef.current), 0);
       })
       .catch(() => setCommentContent(''));
-  };
-
-  const handleSave = useCallback(() => {
-    if (!selectedSample) return;
-    const sample = samples.find(s => s.name === selectedSample);
-    if (!sample) return;
-
-    const base = sample.name.trim();
-
-    const inFilename = `${contest}/${problem}/test/${base}.in`;
-    const outFilename = `${contest}/${problem}/test/${base}.out`;
-    // const commentFilename = `${contest}/${problem}/test/${base}.comment`;
-
-    fetch(`http://localhost:3001/api/test/${inFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: inputContent }),
-    });
-
-    fetch(`http://localhost:3001/api/test/${outFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: outputContent }),
-    });
-
-    // fetch(`http://localhost:3001/api/test/${commentFilename}`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ content: commentContent }),
-    // });
-  }, [samples, selectedSample, inputContent, outputContent, commentContent]);
+  }, [handleSave]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
