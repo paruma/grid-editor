@@ -140,7 +140,7 @@ export default function App() {
           body: JSON.stringify({ content: finalOutputContent }),
         })
       ]);
-      setSnackbarMessage(`${sampleName} を保存しました！`);
+      setSnackbarMessage(`保存しました！`);
       setSnackbarSeverity('success'); // Set severity to success
       setSaveSuccess(true);
 
@@ -172,18 +172,24 @@ export default function App() {
 
 
   useEffect(() => {
+    const interval = setInterval(() => {
+      handleSaveAllModified();
+    }, 5000); // 5秒ごとに保存
+
+    return () => clearInterval(interval);
+  }, [handleSaveAllModified]);
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       if ((isMac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (activeSample) {
-          handleSave(activeSample);
-        }
+        handleSaveAllModified();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave, activeSample]);
+  }, [handleSaveAllModified]);
 
   const handleCreate = async () => {
     const base = newSampleName.trim();
