@@ -241,6 +241,15 @@ export default function App() {
       return;
     }
 
+    // Check if the new name already exists among other samples
+    if (samples.some(s => s.name === newName && s.name !== oldName)) {
+      setSnackbarMessage(`「${newName}」というサンプル名は既に存在します。`);
+      setSnackbarSeverity('warning');
+      setSaveSuccess(true);
+      setEditingSample(null); // Exit editing mode
+      return;
+    }
+
     await fetch('http://localhost:3001/api/rename', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
