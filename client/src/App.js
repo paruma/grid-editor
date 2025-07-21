@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
 export default function App() {
   const [contest, setContest] = useState('abc408');
@@ -247,6 +248,47 @@ export default function App() {
     setSamples(prevSamples => prevSamples.filter(s => s.name !== name));
   };
 
+  const handleDuplicate = useCallback(async (originalName) => {
+    const originalSample = samples.find(s => s.name === originalName);
+    if (!originalSample) return;
+
+    let newName = `${originalName}_copy`;
+    let counter = 1;
+    while (samples.some(s => s.name === newName)) {
+      counter++;
+      newName = `${originalName}_copy${counter}`;
+    }
+
+    // バックエンドのAPIを呼び出してファイルを複製
+    const response = await fetch('http://localhost:3001/api/duplicate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contest, problem, originalName, newName }),
+    });
+
+    if (response.ok) {
+      const newSampleData = await response.json();
+      const newSample = {
+        name: newSampleData.newName,
+        inFile: originalSample.inFile.replace(originalName, newSampleData.newName),
+        outFile: originalSample.outFile.replace(originalName, newSampleData.newName),
+        commentFile: originalSample.commentFile ? originalSample.commentFile.replace(originalName, newSampleData.newName) : null,
+        inputContent: originalSample.inputContent,
+        outputContent: originalSample.outputContent,
+        originalInputContent: originalSample.inputContent,
+        originalOutputContent: originalSample.outputContent,
+      };
+
+      setSamples(prevSamples => [...prevSamples, newSample].sort((a, b) => a.name.localeCompare(b.name)));
+      setSnackbarMessage(`${newSampleData.newName} を複製しました！`);
+      setSaveSuccess(true);
+    } else {
+      console.error("Failed to duplicate sample");
+      setSnackbarMessage(`サンプルの複製に失敗しました。`);
+      setSaveSuccess(false);
+    }
+  }, [samples, contest, problem]);
+
   const handleContentChange = (sampleName, field, value) => {
     setSamples(prevSamples =>
       prevSamples.map(s =>
@@ -343,6 +385,9 @@ export default function App() {
                 )}
                 <Stack direction="row" spacing={1}>
                   <Button variant="contained" size="small" onClick={() => handleSave(sample.name)}>保存</Button>
+                  <IconButton size="small" onClick={() => handleDuplicate(sample.name)}>
+                    <ContentCopyIcon fontSize="small" />
+                  </IconButton>
                   <IconButton size="small" onClick={() => setDeletingSample(sample.name)}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>

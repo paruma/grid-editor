@@ -141,6 +141,51 @@ app.delete("/api/sample", (req, res) => {
   }
 });
 
+app.post("/api/duplicate", (req, res) => {
+  const { contest, problem, originalName, newName: requestedNewName } = req.body;
+
+  if (!contest || !problem || !originalName) {
+    return res.status(400).send("Missing parameters");
+  }
+
+  const testDir = path.resolve(BASE_DIR, contest, problem, "test");
+  if (!testDir.startsWith(BASE_DIR)) {
+    return res.status(400).send("Invalid path");
+  }
+
+  const originalInPath = path.join(testDir, `${originalName}.in`);
+  const originalOutPath = path.join(testDir, `${originalName}.out`);
+
+  if (!fs.existsSync(originalInPath) && !fs.existsSync(originalOutPath)) {
+    return res.status(404).send("Original sample files not found");
+  }
+
+  let newName = requestedNewName;
+  if (!newName) {
+    let counter = 1;
+    do {
+      newName = `${originalName}_copy${counter > 1 ? counter : ''}`;
+      counter++;
+    } while (fs.existsSync(path.join(testDir, `${newName}.in`)) || fs.existsSync(path.join(testDir, `${newName}.out`)));
+  }
+
+  const newInPath = path.join(testDir, `${newName}.in`);
+  const newOutPath = path.join(testDir, `${newName}.out`);
+
+  try {
+    if (fs.existsSync(originalInPath)) {
+      fs.copyFileSync(originalInPath, newInPath);
+    }
+    if (fs.existsSync(originalOutPath)) {
+      fs.copyFileSync(originalOutPath, newOutPath);
+    }
+    res.json({ newName });
+  } catch (error) {
+    console.error("Error duplicating files:", error);
+    res.status(500).send("Error duplicating files");
+  }
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
