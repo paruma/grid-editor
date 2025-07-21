@@ -8,6 +8,7 @@ import {
   Stack,
   Snackbar,
   Alert,
+  CircularProgress,
 } from '@mui/material';
 
 export default function App() {
@@ -16,16 +17,13 @@ export default function App() {
   const [problem, setProblem] = useState('a');
   const [problemInput, setProblemInput] = useState('a');
   const [samples, setSamples] = useState([]);
-  const [selectedSample, setSelectedSample] = useState(null);
-  const [inputContent, setInputContent] = useState('');
-  const [outputContent, setOutputContent] = useState('');
-  const [originalInputContent, setOriginalInputContent] = useState('');
-  const [originalOutputContent, setOriginalOutputContent] = useState('');
   const [newSampleName, setNewSampleName] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const inputRef = useRef(null);
-  const outputRef = useRef(null);
+  const [loading, setLoading] = useState(false);
+  const [activeSample, setActiveSample] = useState(null);
+
+  const textAreaRefs = useRef({});
 
   const autoResize = (el) => {
     if (el) {
@@ -35,52 +33,69 @@ export default function App() {
   };
 
   const fetchSamples = useCallback(() => {
+    setLoading(true);
     fetch(`http://localhost:3001/api/tests?contest=${contest}&problem=${problem}`)
       .then(res => {
         if (!res.ok) {
           setSamples([]);
-          setSelectedSample(null);
-          setInputContent('');
-          setOutputContent('');
           return null;
         }
         return res.json();
       })
-      .then(data => {
+      .then(async (data) => {
         if (data) {
-          setSamples(data);
-          setSelectedSample(null);
-          setInputContent('');
-          setOutputContent('');
+          const samplesWithContent = await Promise.all(
+            data.map(async (sample) => {
+              const [inputRes, outputRes] = await Promise.all([
+                fetch(`http://localhost:3001/api/test/${sample.inFile}`),
+                fetch(`http://localhost:3001/api/test/${sample.outFile}`),
+              ]);
+              const inputContent = await inputRes.text();
+              const outputContent = await outputRes.text();
+              return {
+                ...sample,
+                inputContent,
+                outputContent,
+                originalInputContent: inputContent,
+                originalOutputContent: outputContent,
+              };
+            })
+          );
+          setSamples(samplesWithContent);
         }
       })
       .catch(() => {
         setSamples([]);
-        setSelectedSample(null);
-        setInputContent('');
-        setOutputContent('');
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, [contest, problem]);
 
   useEffect(() => {
     fetchSamples();
-  }, [contest, fetchSamples, problem]);
+  }, [fetchSamples]);
 
   useEffect(() => {
-    setContestInput(contest);
-  }, [contest]);
+    samples.forEach(sample => {
+      if (textAreaRefs.current[sample.name]) {
+        autoResize(textAreaRefs.current[sample.name].input);
+        autoResize(textAreaRefs.current[sample.name].output);
+      }
+    });
+  }, [samples]);
 
-  const handleSave = useCallback(async () => {
-    if (!selectedSample) return;
+  const handleSave = useCallback(async (sampleName) => {
+    const sample = samples.find(s => s.name === sampleName);
+    if (!sample) return;
+
+    const { inputContent, outputContent, originalInputContent, originalOutputContent } = sample;
 
     const finalInputContent = inputContent && !inputContent.endsWith('\n') ? `${inputContent}\n` : inputContent;
     const finalOutputContent = outputContent && !outputContent.endsWith('\n') ? `${outputContent}\n` : outputContent;
 
     const isChanged = finalInputContent !== originalInputContent || finalOutputContent !== originalOutputContent;
     if (!isChanged) return;
-
-    const sample = samples.find(s => s.name === selectedSample);
-    if (!sample) return;
 
     const base = sample.name.trim();
     const inFilename = `${contest}/${problem}/test/${base}.in`;
@@ -99,57 +114,55 @@ export default function App() {
           body: JSON.stringify({ content: finalOutputContent }),
         })
       ]);
-      setSnackbarMessage(`${selectedSample} を保存しました！`);
+      setSnackbarMessage(`${sampleName} を保存しました！`);
       setSaveSuccess(true);
-      setInputContent(finalInputContent);
-      setOutputContent(finalOutputContent);
-      setOriginalInputContent(finalInputContent);
-      setOriginalOutputContent(finalOutputContent);
+
+      setSamples(prevSamples =>
+        prevSamples.map(s =>
+          s.name === sampleName
+            ? {
+              ...s,
+              inputContent: finalInputContent,
+              outputContent: finalOutputContent,
+              originalInputContent: finalInputContent,
+              originalOutputContent: finalOutputContent,
+            }
+            : s
+        )
+      );
     } catch (error) {
       console.error("Failed to save:", error);
     }
-  }, [contest, problem, samples, selectedSample, inputContent, outputContent, originalInputContent, originalOutputContent]);
+  }, [contest, problem, samples]);
 
-  const handleSampleClick = useCallback(async (sample) => {
-    await handleSave();
-    setSelectedSample(sample.name);
+  const handleSaveAllModified = useCallback(async () => {
+    const modifiedSamples = samples.filter(s =>
+      (s.inputContent && !s.inputContent.endsWith('\n') ? `${s.inputContent}\n` : s.inputContent) !== s.originalInputContent ||
+      (s.outputContent && !s.outputContent.endsWith('\n') ? `${s.outputContent}\n` : s.outputContent) !== s.originalOutputContent
+    );
+    await Promise.all(modifiedSamples.map(s => handleSave(s.name)));
+  }, [samples, handleSave]);
 
-    fetch(`http://localhost:3001/api/test/${sample.inFile}`)
-      .then(res => res.text())
-      .then(text => {
-        setInputContent(text);
-        setOriginalInputContent(text);
-        setTimeout(() => autoResize(inputRef.current), 0);
-      })
-      .catch(() => setInputContent('Error loading input file'));
-
-    fetch(`http://localhost:3001/api/test/${sample.outFile}`)
-      .then(res => res.text())
-      .then(text => {
-        setOutputContent(text);
-        setOriginalOutputContent(text);
-        setTimeout(() => autoResize(outputRef.current), 0);
-      })
-      .catch(() => setOutputContent('Error loading output file'));
-  }, [handleSave]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       if ((isMac ? e.metaKey : e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        handleSave();
+        if (activeSample) {
+          handleSave(activeSample);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleSave]);
+  }, [handleSave, activeSample]);
 
   const handleCreate = async () => {
     const base = newSampleName.trim();
     if (!base || samples.find(s => s.name === base)) return;
 
-    await handleSave();
+    await handleSaveAllModified();
 
     const inFilename = `${contest}/${problem}/test/${base}.in`;
     const outFilename = `${contest}/${problem}/test/${base}.out`;
@@ -172,15 +185,22 @@ export default function App() {
       inFile: `${contest}/${problem}/test/${base}.in`,
       outFile: `${contest}/${problem}/test/${base}.out`,
       commentFile: null,
+      inputContent: '',
+      outputContent: '',
+      originalInputContent: '',
+      originalOutputContent: '',
     };
 
     setSamples(prevSamples => [...prevSamples, newSample].sort((a, b) => a.name.localeCompare(b.name)));
-    setSelectedSample(base);
-    setInputContent('');
-    setOutputContent('');
-    setOriginalInputContent('');
-    setOriginalOutputContent('');
     setNewSampleName('');
+  };
+
+  const handleContentChange = (sampleName, field, value) => {
+    setSamples(prevSamples =>
+      prevSamples.map(s =>
+        s.name === sampleName ? { ...s, [field]: value } : s
+      )
+    );
   };
 
   const handleProblemKeyDown = (e) => {
@@ -236,73 +256,59 @@ export default function App() {
         <Button variant="outlined" onClick={handleCreate}>作成</Button>
       </Stack>
 
-      <Stack direction="row" spacing={1} flexWrap="wrap" mb={3}>
-        {samples.map(sample => (
-          <Button
-            key={sample.name}
-            variant={sample.name === selectedSample ? 'contained' : 'outlined'}
-            size="small"
-            sx={{ textTransform: "none" }}
-            onClick={() => handleSampleClick(sample)}
-          >
-            {sample.name.toLowerCase()}
-          </Button>
-        ))}
-      </Stack>
-
-      {selectedSample && (
-        <>
-          <Typography variant="h5" gutterBottom>{selectedSample}</Typography>
-          <Stack direction="row" spacing={2} alignItems="flex-start">
-            <Box flex={1}>
-              <Typography variant="subtitle1">入力ファイル</Typography>
-              <TextField
-                inputRef={inputRef}
-                value={inputContent}
-                onChange={e => {
-                  setInputContent(e.target.value);
-                  autoResize(e.target);
-                }}
-                onInput={e => autoResize(e.target)}
-                multiline
-                fullWidth
-                minRows={1}
-                InputProps={{
-                  sx: {
-                    fontFamily: 'monospace',
-                  }
-                }}
-              />
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Stack spacing={4}>
+          {samples.map(sample => (
+            <Box key={sample.name}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                <Typography variant="h5">{sample.name}</Typography>
+                <Button variant="contained" size="small" onClick={() => handleSave(sample.name)}>保存</Button>
+              </Stack>
+              <Stack direction="row" spacing={2} alignItems="flex-start">
+                <Box flex={1}>
+                  <Typography variant="subtitle1">入力ファイル</Typography>
+                  <TextField
+                    inputRef={el => {
+                      if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
+                      textAreaRefs.current[sample.name].input = el;
+                    }}
+                    value={sample.inputContent}
+                    onChange={e => handleContentChange(sample.name, 'inputContent', e.target.value)}
+                    onFocus={() => setActiveSample(sample.name)}
+                    onInput={e => autoResize(e.target)}
+                    multiline
+                    fullWidth
+                    minRows={1}
+                    InputProps={{ sx: { fontFamily: 'monospace' } }}
+                  />
+                </Box>
+                <Box flex={1}>
+                  <Typography variant="subtitle1">出力ファイル</Typography>
+                  <TextField
+                    inputRef={el => {
+                      if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
+                      textAreaRefs.current[sample.name].output = el;
+                    }}
+                    value={sample.outputContent}
+                    onChange={e => handleContentChange(sample.name, 'outputContent', e.target.value)}
+                    onFocus={() => setActiveSample(sample.name)}
+                    onInput={e => autoResize(e.target)}
+                    multiline
+                    fullWidth
+                    minRows={1}
+                    InputProps={{ sx: { fontFamily: 'monospace' } }}
+                  />
+                </Box>
+              </Stack>
             </Box>
-            <Box flex={1}>
-              <Typography variant="subtitle1">出力ファイル</Typography>
-              <TextField
-                inputRef={outputRef}
-                value={outputContent}
-                onChange={e => {
-                  setOutputContent(e.target.value);
-                  autoResize(e.target);
-                }}
-                onInput={e => autoResize(e.target)}
-                multiline
-                fullWidth
-                minRows={1}
-                InputProps={{
-                  sx: {
-                    fontFamily: 'monospace',
-                  }
-                }}
-              />
-            </Box>
-          </Stack>
-
-
-
-          <Box mt={2}>
-            <Button variant="contained" onClick={handleSave}>保存</Button>
-          </Box>
-        </>
+          ))}
+        </Stack>
       )}
+
       <Snackbar
         open={saveSuccess}
         autoHideDuration={2000}
