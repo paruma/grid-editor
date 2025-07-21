@@ -73,7 +73,10 @@ export default function App() {
   const handleSave = useCallback(async () => {
     if (!selectedSample) return;
 
-    const isChanged = inputContent !== originalInputContent || outputContent !== originalOutputContent;
+    const finalInputContent = inputContent && !inputContent.endsWith('\n') ? `${inputContent}\n` : inputContent;
+    const finalOutputContent = outputContent && !outputContent.endsWith('\n') ? `${outputContent}\n` : outputContent;
+
+    const isChanged = finalInputContent !== originalInputContent || finalOutputContent !== originalOutputContent;
     if (!isChanged) return;
 
     const sample = samples.find(s => s.name === selectedSample);
@@ -88,18 +91,20 @@ export default function App() {
         fetch(`http://localhost:3001/api/test/${inFilename}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: inputContent }),
+          body: JSON.stringify({ content: finalInputContent }),
         }),
         fetch(`http://localhost:3001/api/test/${outFilename}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: outputContent }),
+          body: JSON.stringify({ content: finalOutputContent }),
         })
       ]);
       setSnackbarMessage(`${selectedSample} を保存しました！`);
       setSaveSuccess(true);
-      setOriginalInputContent(inputContent);
-      setOriginalOutputContent(outputContent);
+      setInputContent(finalInputContent);
+      setOutputContent(finalOutputContent);
+      setOriginalInputContent(finalInputContent);
+      setOriginalOutputContent(finalOutputContent);
     } catch (error) {
       console.error("Failed to save:", error);
     }
