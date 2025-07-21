@@ -19,6 +19,8 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { TransitionGroup, CSSTransition } from 'react-transition-group';
+import './App.css'; // アニメーション用のCSSをインポート
 
 export default function App() {
   const [contest, setContest] = useState('abc408');
@@ -355,83 +357,93 @@ export default function App() {
           <CircularProgress />
         </Box>
       ) : (
-        <Stack spacing={4}>
-          {samples.map(sample => (
-            <Box key={sample.name}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                {editingSample === sample.name ? (
-                  <TextField
-                    value={editingSampleName}
-                    onChange={(e) => setEditingSampleName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleRename(sample.name, editingSampleName);
-                      }
-                    }}
-                    onBlur={() => handleRename(sample.name, editingSampleName)}
-                    size="small"
-                    inputRef={renameInputRef}
-                  />
-                ) : (
-                  <Stack direction="row" alignItems="center">
-                    <Typography variant="h5">{sample.name}</Typography>
-                    <IconButton size="small" onClick={() => {
-                      setEditingSample(sample.name);
-                      setEditingSampleName(sample.name);
-                    }}>
-                      <EditIcon fontSize="small" />
-                    </IconButton>
+        <TransitionGroup component={Stack} spacing={4}>
+          {samples.map(sample => {
+            const nodeRef = React.createRef();
+            return (
+              <CSSTransition
+                key={sample.name}
+                nodeRef={nodeRef}
+                timeout={300}
+                classNames="sample-item"
+              >
+                <Box ref={nodeRef}>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                    {editingSample === sample.name ? (
+                      <TextField
+                        value={editingSampleName}
+                        onChange={(e) => setEditingSampleName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleRename(sample.name, editingSampleName);
+                          }
+                        }}
+                        onBlur={() => handleRename(sample.name, editingSampleName)}
+                        size="small"
+                        inputRef={renameInputRef}
+                      />
+                    ) : (
+                      <Stack direction="row" alignItems="center">
+                        <Typography variant="h5">{sample.name}</Typography>
+                        <IconButton size="small" onClick={() => {
+                          setEditingSample(sample.name);
+                          setEditingSampleName(sample.name);
+                        }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Stack>
+                    )}
+                    <Stack direction="row" spacing={1}>
+                      <Button variant="contained" size="small" onClick={() => handleSave(sample.name)}>保存</Button>
+                      <IconButton size="small" onClick={() => handleDuplicate(sample.name)}>
+                        <ContentCopyIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" onClick={() => setDeletingSample(sample.name)}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
                   </Stack>
-                )}
-                <Stack direction="row" spacing={1}>
-                  <Button variant="contained" size="small" onClick={() => handleSave(sample.name)}>保存</Button>
-                  <IconButton size="small" onClick={() => handleDuplicate(sample.name)}>
-                    <ContentCopyIcon fontSize="small" />
-                  </IconButton>
-                  <IconButton size="small" onClick={() => setDeletingSample(sample.name)}>
-                    <DeleteIcon fontSize="small" />
-                  </IconButton>
-                </Stack>
-              </Stack>
-              <Stack direction="row" spacing={2} alignItems="flex-start">
-                <Box flex={1}>
-                  <Typography variant="subtitle1">入力ファイル</Typography>
-                  <TextField
-                    inputRef={el => {
-                      if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
-                      textAreaRefs.current[sample.name].input = el;
-                    }}
-                    value={sample.inputContent}
-                    onChange={e => handleContentChange(sample.name, 'inputContent', e.target.value)}
-                    onFocus={() => setActiveSample(sample.name)}
-                    onInput={e => autoResize(e.target)}
-                    multiline
-                    fullWidth
-                    minRows={1}
-                    InputProps={{ sx: { fontFamily: 'monospace' } }}
-                  />
+                  <Stack direction="row" spacing={2} alignItems="flex-start">
+                    <Box flex={1}>
+                      <Typography variant="subtitle1">入力ファイル</Typography>
+                      <TextField
+                        inputRef={el => {
+                          if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
+                          textAreaRefs.current[sample.name].input = el;
+                        }}
+                        value={sample.inputContent}
+                        onChange={e => handleContentChange(sample.name, 'inputContent', e.target.value)}
+                        onFocus={() => setActiveSample(sample.name)}
+                        onInput={e => autoResize(e.target)}
+                        multiline
+                        fullWidth
+                        minRows={1}
+                        InputProps={{ sx: { fontFamily: 'monospace' } }}
+                      />
+                    </Box>
+                    <Box flex={1}>
+                      <Typography variant="subtitle1">出力ファイル</Typography>
+                      <TextField
+                        inputRef={el => {
+                          if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
+                          textAreaRefs.current[sample.name].output = el;
+                        }}
+                        value={sample.outputContent}
+                        onChange={e => handleContentChange(sample.name, 'outputContent', e.target.value)}
+                        onFocus={() => setActiveSample(sample.name)}
+                        onInput={e => autoResize(e.target)}
+                        multiline
+                        fullWidth
+                        minRows={1}
+                        InputProps={{ sx: { fontFamily: 'monospace' } }}
+                      />
+                    </Box>
+                  </Stack>
                 </Box>
-                <Box flex={1}>
-                  <Typography variant="subtitle1">出力ファイル</Typography>
-                  <TextField
-                    inputRef={el => {
-                      if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
-                      textAreaRefs.current[sample.name].output = el;
-                    }}
-                    value={sample.outputContent}
-                    onChange={e => handleContentChange(sample.name, 'outputContent', e.target.value)}
-                    onFocus={() => setActiveSample(sample.name)}
-                    onInput={e => autoResize(e.target)}
-                    multiline
-                    fullWidth
-                    minRows={1}
-                    InputProps={{ sx: { fontFamily: 'monospace' } }}
-                  />
-                </Box>
-              </Stack>
-            </Box>
-          ))}
-        </Stack>
+              </CSSTransition>
+            );
+          })}
+        </TransitionGroup>
       )}
 
       <Dialog
