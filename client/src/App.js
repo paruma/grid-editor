@@ -31,6 +31,7 @@ export default function App() {
   const [newSampleName, setNewSampleName] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success'); // New state for severity
   const [loading, setLoading] = useState(false);
   const [activeSample, setActiveSample] = useState(null);
   const [editingSample, setEditingSample] = useState(null);
@@ -140,6 +141,7 @@ export default function App() {
         })
       ]);
       setSnackbarMessage(`${sampleName} を保存しました！`);
+      setSnackbarSeverity('success'); // Set severity to success
       setSaveSuccess(true);
 
       setSamples(prevSamples =>
@@ -185,7 +187,14 @@ export default function App() {
 
   const handleCreate = async () => {
     const base = newSampleName.trim();
-    if (!base || samples.find(s => s.name === base)) return;
+    if (!base) return;
+
+    if (samples.some(s => s.name === base)) {
+      setSnackbarMessage(`「${base}」というサンプル名は既に存在します。`);
+      setSnackbarSeverity('warning'); // Set severity to warning
+      setSaveSuccess(true);
+      return;
+    }
 
     await handleSaveAllModified();
 
@@ -283,11 +292,13 @@ export default function App() {
 
       setSamples(prevSamples => [...prevSamples, newSample].sort((a, b) => a.name.localeCompare(b.name)));
       setSnackbarMessage(`${newSampleData.newName} を複製しました！`);
+      setSnackbarSeverity('success'); // Set severity to success
       setSaveSuccess(true);
     } else {
       console.error("Failed to duplicate sample");
       setSnackbarMessage(`サンプルの複製に失敗しました。`);
-      setSaveSuccess(false);
+      setSnackbarSeverity('error'); // Set severity to error
+      setSaveSuccess(true);
     }
   }, [samples, contest, problem]);
 
@@ -316,6 +327,7 @@ export default function App() {
   const handleCloseSnackbar = () => {
     setSaveSuccess(false);
     setSnackbarMessage('');
+    setSnackbarSeverity('success'); // Reset severity on close
   };
 
   return (
@@ -346,6 +358,11 @@ export default function App() {
         <TextField
           value={newSampleName}
           onChange={e => setNewSampleName(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === 'Enter') {
+              handleCreate();
+            }
+          }}
           placeholder="新しいサンプル名"
           size="small"
         />
@@ -467,7 +484,7 @@ export default function App() {
         autoHideDuration={2000}
         onClose={handleCloseSnackbar}
       >
-        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
+        <Alert onClose={handleCloseSnackbar} severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
