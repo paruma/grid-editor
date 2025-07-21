@@ -6,6 +6,8 @@ import {
   Button,
   Box,
   Stack,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 
 export default function App() {
@@ -18,6 +20,7 @@ export default function App() {
   const [inputContent, setInputContent] = useState('');
   const [outputContent, setOutputContent] = useState('');
   const [newSampleName, setNewSampleName] = useState('');
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const inputRef = useRef(null);
   const outputRef = useRef(null);
 
@@ -66,7 +69,7 @@ export default function App() {
     setContestInput(contest);
   }, [contest]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (!selectedSample) return;
     const sample = samples.find(s => s.name === selectedSample);
     if (!sample) return;
@@ -75,29 +78,28 @@ export default function App() {
 
     const inFilename = `${contest}/${problem}/test/${base}.in`;
     const outFilename = `${contest}/${problem}/test/${base}.out`;
-    // const commentFilename = `${contest}/${problem}/test/${base}.comment`;
 
-    fetch(`http://localhost:3001/api/test/${inFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: inputContent }),
-    });
-
-    fetch(`http://localhost:3001/api/test/${outFilename}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: outputContent }),
-    });
-
-    // fetch(`http://localhost:3001/api/test/${commentFilename}`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ content: commentContent }),
-    // });
+    try {
+      await Promise.all([
+        fetch(`http://localhost:3001/api/test/${inFilename}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: inputContent }),
+        }),
+        fetch(`http://localhost:3001/api/test/${outFilename}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: outputContent }),
+        })
+      ]);
+      setSaveSuccess(true);
+    } catch (error) {
+      console.error("Failed to save:", error);
+    }
   }, [contest, problem, samples, selectedSample, inputContent, outputContent]);
 
-    const handleSampleClick = useCallback((sample) => {
-    handleSave();
+  const handleSampleClick = useCallback(async (sample) => {
+    await handleSave();
     setSelectedSample(sample.name);
 
     fetch(`http://localhost:3001/api/test/${sample.inFile}`)
@@ -141,7 +143,6 @@ export default function App() {
 
     const inFilename = `${contest}/${problem}/test/${base}.in`;
     const outFilename = `${contest}/${problem}/test/${base}.out`;
-    // const commentFilename = `${contest}/${problem}/test/${base}.comment`;
 
     Promise.all([
       fetch(`http://localhost:3001/api/test/${inFilename}`, {
@@ -154,11 +155,6 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: '' }),
       }),
-      // fetch(`http://localhost:3001/api/test/${commentFilename}`, {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ content: '' }),
-      // })
     ]).then(() => {
       setNewSampleName('');
       fetchSamples();
@@ -280,6 +276,15 @@ export default function App() {
           </Box>
         </>
       )}
+      <Snackbar
+        open={saveSuccess}
+        autoHideDuration={2000}
+        onClose={() => setSaveSuccess(false)}
+      >
+        <Alert onClose={() => setSaveSuccess(false)} severity="success" sx={{ width: '100%' }}>
+          保存しました！
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
