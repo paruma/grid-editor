@@ -19,6 +19,8 @@ export default function App() {
   const [selectedSample, setSelectedSample] = useState(null);
   const [inputContent, setInputContent] = useState('');
   const [outputContent, setOutputContent] = useState('');
+  const [originalInputContent, setOriginalInputContent] = useState('');
+  const [originalOutputContent, setOriginalOutputContent] = useState('');
   const [newSampleName, setNewSampleName] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -36,7 +38,6 @@ export default function App() {
     fetch(`http://localhost:3001/api/tests?contest=${contest}&problem=${problem}`)
       .then(res => {
         if (!res.ok) {
-          // 存在しないcontest/problemなどでエラーの場合は空配列にしてUI初期化
           setSamples([]);
           setSelectedSample(null);
           setInputContent('');
@@ -54,7 +55,6 @@ export default function App() {
         }
       })
       .catch(() => {
-        // ネットワークエラーも同様に空初期化
         setSamples([]);
         setSelectedSample(null);
         setInputContent('');
@@ -72,11 +72,14 @@ export default function App() {
 
   const handleSave = useCallback(async () => {
     if (!selectedSample) return;
+
+    const isChanged = inputContent !== originalInputContent || outputContent !== originalOutputContent;
+    if (!isChanged) return;
+
     const sample = samples.find(s => s.name === selectedSample);
     if (!sample) return;
 
     const base = sample.name.trim();
-
     const inFilename = `${contest}/${problem}/test/${base}.in`;
     const outFilename = `${contest}/${problem}/test/${base}.out`;
 
@@ -95,33 +98,31 @@ export default function App() {
       ]);
       setSnackbarMessage(`${selectedSample} を保存しました！`);
       setSaveSuccess(true);
+      setOriginalInputContent(inputContent);
+      setOriginalOutputContent(outputContent);
     } catch (error) {
       console.error("Failed to save:", error);
     }
-  }, [contest, problem, samples, selectedSample, inputContent, outputContent]);
+  }, [contest, problem, samples, selectedSample, inputContent, outputContent, originalInputContent, originalOutputContent]);
 
   const handleSampleClick = useCallback(async (sample) => {
     await handleSave();
     setSelectedSample(sample.name);
 
     fetch(`http://localhost:3001/api/test/${sample.inFile}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Input file not found');
-        return res.text();
-      })
+      .then(res => res.text())
       .then(text => {
         setInputContent(text);
+        setOriginalInputContent(text);
         setTimeout(() => autoResize(inputRef.current), 0);
       })
       .catch(() => setInputContent('Error loading input file'));
 
     fetch(`http://localhost:3001/api/test/${sample.outFile}`)
-      .then(res => {
-        if (!res.ok) throw new Error('Output file not found');
-        return res.text();
-      })
+      .then(res => res.text())
       .then(text => {
         setOutputContent(text);
+        setOriginalOutputContent(text);
         setTimeout(() => autoResize(outputRef.current), 0);
       })
       .catch(() => setOutputContent('Error loading output file'));
@@ -172,6 +173,8 @@ export default function App() {
     setSelectedSample(base);
     setInputContent('');
     setOutputContent('');
+    setOriginalInputContent('');
+    setOriginalOutputContent('');
     setNewSampleName('');
   };
 
