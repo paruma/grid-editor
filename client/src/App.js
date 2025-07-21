@@ -21,6 +21,7 @@ export default function App() {
   const [outputContent, setOutputContent] = useState('');
   const [newSampleName, setNewSampleName] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
   const inputRef = useRef(null);
   const outputRef = useRef(null);
 
@@ -92,6 +93,7 @@ export default function App() {
           body: JSON.stringify({ content: outputContent }),
         })
       ]);
+      setSnackbarMessage(`${selectedSample} を保存しました！`);
       setSaveSuccess(true);
     } catch (error) {
       console.error("Failed to save:", error);
@@ -137,14 +139,16 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleSave]);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     const base = newSampleName.trim();
-    if (!base) return;
+    if (!base || samples.find(s => s.name === base)) return;
+
+    await handleSave();
 
     const inFilename = `${contest}/${problem}/test/${base}.in`;
     const outFilename = `${contest}/${problem}/test/${base}.out`;
 
-    Promise.all([
+    await Promise.all([
       fetch(`http://localhost:3001/api/test/${inFilename}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -155,10 +159,20 @@ export default function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ content: '' }),
       }),
-    ]).then(() => {
-      setNewSampleName('');
-      fetchSamples();
-    });
+    ]);
+
+    const newSample = {
+      name: base,
+      inFile: `${contest}/${problem}/test/${base}.in`,
+      outFile: `${contest}/${problem}/test/${base}.out`,
+      commentFile: null,
+    };
+
+    setSamples(prevSamples => [...prevSamples, newSample].sort((a, b) => a.name.localeCompare(b.name)));
+    setSelectedSample(base);
+    setInputContent('');
+    setOutputContent('');
+    setNewSampleName('');
   };
 
   const handleProblemKeyDown = (e) => {
@@ -173,6 +187,11 @@ export default function App() {
       e.preventDefault();
       setContest(contestInput);
     }
+  };
+
+  const handleCloseSnackbar = () => {
+    setSaveSuccess(false);
+    setSnackbarMessage('');
   };
 
   return (
@@ -279,10 +298,10 @@ export default function App() {
       <Snackbar
         open={saveSuccess}
         autoHideDuration={2000}
-        onClose={() => setSaveSuccess(false)}
+        onClose={handleCloseSnackbar}
       >
-        <Alert onClose={() => setSaveSuccess(false)} severity="success" sx={{ width: '100%' }}>
-          保存しました！
+        <Alert onClose={handleCloseSnackbar} severity="success" sx={{ width: '100%' }}>
+          {snackbarMessage}
         </Alert>
       </Snackbar>
     </Container>
