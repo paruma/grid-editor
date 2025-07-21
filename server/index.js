@@ -112,6 +112,35 @@ app.post("/api/rename", (req, res) => {
   }
 });
 
+app.delete("/api/sample", (req, res) => {
+  const { contest, problem, name } = req.query;
+
+  if (!contest || !problem || !name) {
+    return res.status(400).send("Missing parameters");
+  }
+
+  const testDir = path.resolve(BASE_DIR, contest, problem, "test");
+  if (!testDir.startsWith(BASE_DIR)) {
+    return res.status(400).send("Invalid path");
+  }
+
+  const inPath = path.join(testDir, `${name}.in`);
+  const outPath = path.join(testDir, `${name}.out`);
+
+  try {
+    if (fs.existsSync(inPath)) {
+      fs.unlinkSync(inPath);
+    }
+    if (fs.existsSync(outPath)) {
+      fs.unlinkSync(outPath);
+    }
+    res.send("OK");
+  } catch (error) {
+    console.error("Error deleting files:", error);
+    res.status(500).send("Error deleting files");
+  }
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

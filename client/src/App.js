@@ -10,8 +10,14 @@ import {
   Alert,
   CircularProgress,
   IconButton,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 export default function App() {
   const [contest, setContest] = useState('abc408');
@@ -26,6 +32,7 @@ export default function App() {
   const [activeSample, setActiveSample] = useState(null);
   const [editingSample, setEditingSample] = useState(null);
   const [editingSampleName, setEditingSampleName] = useState('');
+  const [deletingSample, setDeletingSample] = useState(null);
 
   const textAreaRefs = useRef({});
   const renameInputRef = useRef(null);
@@ -232,6 +239,14 @@ export default function App() {
     setEditingSample(null);
   };
 
+  const handleDelete = async (name) => {
+    setDeletingSample(null);
+    await fetch(`http://localhost:3001/api/sample?contest=${contest}&problem=${problem}&name=${name}`, {
+      method: 'DELETE',
+    });
+    setSamples(prevSamples => prevSamples.filter(s => s.name !== name));
+  };
+
   const handleContentChange = (sampleName, field, value) => {
     setSamples(prevSamples =>
       prevSamples.map(s =>
@@ -326,7 +341,12 @@ export default function App() {
                     </IconButton>
                   </Stack>
                 )}
-                <Button variant="contained" size="small" onClick={() => handleSave(sample.name)}>保存</Button>
+                <Stack direction="row" spacing={1}>
+                  <Button variant="contained" size="small" onClick={() => handleSave(sample.name)}>保存</Button>
+                  <IconButton size="small" onClick={() => setDeletingSample(sample.name)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
               </Stack>
               <Stack direction="row" spacing={2} alignItems="flex-start">
                 <Box flex={1}>
@@ -368,6 +388,22 @@ export default function App() {
           ))}
         </Stack>
       )}
+
+      <Dialog
+        open={!!deletingSample}
+        onClose={() => setDeletingSample(null)}
+      >
+        <DialogTitle>サンプルの削除</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            本当に「{deletingSample}」を削除しますか？この操作は元に戻せません。
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeletingSample(null)}>キャンセル</Button>
+          <Button onClick={() => handleDelete(deletingSample)} color="error">削除</Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={saveSuccess}
