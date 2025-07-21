@@ -82,6 +82,36 @@ app.post("/api/test/:filename(*)", (req, res) => {
   res.send("OK");
 });
 
+app.post("/api/rename", (req, res) => {
+  const { contest, problem, oldName, newName } = req.body;
+
+  if (!contest || !problem || !oldName || !newName) {
+    return res.status(400).send("Missing parameters");
+  }
+
+  const testDir = path.resolve(BASE_DIR, contest, problem, "test");
+  if (!testDir.startsWith(BASE_DIR)) {
+    return res.status(400).send("Invalid path");
+  }
+
+  const oldInPath = path.join(testDir, `${oldName}.in`);
+  const newInPath = path.join(testDir, `${newName}.in`);
+  const oldOutPath = path.join(testDir, `${oldName}.out`);
+  const newOutPath = path.join(testDir, `${newName}.out`);
+
+  try {
+    if (fs.existsSync(oldInPath)) {
+      fs.renameSync(oldInPath, newInPath);
+    }
+    if (fs.existsSync(oldOutPath)) {
+      fs.renameSync(oldOutPath, newOutPath);
+    }
+    res.send("OK");
+  } catch (error) {
+    res.status(500).send("Error renaming files");
+  }
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);

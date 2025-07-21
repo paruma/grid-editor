@@ -9,7 +9,9 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
+  IconButton,
 } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
 
 export default function App() {
   const [contest, setContest] = useState('abc408');
@@ -22,8 +24,11 @@ export default function App() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [activeSample, setActiveSample] = useState(null);
+  const [editingSample, setEditingSample] = useState(null);
+  const [editingSampleName, setEditingSampleName] = useState('');
 
   const textAreaRefs = useRef({});
+  const renameInputRef = useRef(null);
 
   const autoResize = (el) => {
     if (el) {
@@ -77,6 +82,10 @@ export default function App() {
   }, [fetchSamples]);
 
   useEffect(() => {
+    setContestInput(contest);
+  }, [contest]);
+
+  useEffect(() => {
     samples.forEach(sample => {
       if (textAreaRefs.current[sample.name]) {
         autoResize(textAreaRefs.current[sample.name].input);
@@ -84,6 +93,12 @@ export default function App() {
       }
     });
   }, [samples]);
+
+  useEffect(() => {
+    if (editingSample && renameInputRef.current) {
+      renameInputRef.current.focus();
+    }
+  }, [editingSample]);
 
   const handleSave = useCallback(async (sampleName) => {
     const sample = samples.find(s => s.name === sampleName);
@@ -195,6 +210,28 @@ export default function App() {
     setNewSampleName('');
   };
 
+  const handleRename = async (oldName, newName) => {
+    if (!newName || oldName === newName) {
+      setEditingSample(null);
+      return;
+    }
+
+    await fetch('http://localhost:3001/api/rename', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contest, problem, oldName, newName }),
+    });
+
+    setSamples(prevSamples =>
+      prevSamples.map(s =>
+        s.name === oldName
+          ? { ...s, name: newName, inFile: s.inFile.replace(oldName, newName), outFile: s.outFile.replace(oldName, newName) }
+          : s
+      ).sort((a, b) => a.name.localeCompare(b.name))
+    );
+    setEditingSample(null);
+  };
+
   const handleContentChange = (sampleName, field, value) => {
     setSamples(prevSamples =>
       prevSamples.map(s =>
@@ -265,7 +302,30 @@ export default function App() {
           {samples.map(sample => (
             <Box key={sample.name}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
-                <Typography variant="h5">{sample.name}</Typography>
+                {editingSample === sample.name ? (
+                  <TextField
+                    value={editingSampleName}
+                    onChange={(e) => setEditingSampleName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleRename(sample.name, editingSampleName);
+                      }
+                    }}
+                    onBlur={() => handleRename(sample.name, editingSampleName)}
+                    size="small"
+                    inputRef={renameInputRef}
+                  />
+                ) : (
+                  <Stack direction="row" alignItems="center">
+                    <Typography variant="h5">{sample.name}</Typography>
+                    <IconButton size="small" onClick={() => {
+                      setEditingSample(sample.name);
+                      setEditingSampleName(sample.name);
+                    }}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </Stack>
+                )}
                 <Button variant="contained" size="small" onClick={() => handleSave(sample.name)}>保存</Button>
               </Stack>
               <Stack direction="row" spacing={2} alignItems="flex-start">
