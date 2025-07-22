@@ -20,6 +20,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
+import Editor from './Editor';
 import './App.css'; // アニメーション用のCSSをインポート
 
 export default function App() {
@@ -38,15 +39,7 @@ export default function App() {
   const [editingSampleName, setEditingSampleName] = useState('');
   const [deletingSample, setDeletingSample] = useState(null);
 
-  const textAreaRefs = useRef({});
   const renameInputRef = useRef(null);
-
-  const autoResize = (el) => {
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = el.scrollHeight + 'px';
-    }
-  };
 
   const fetchSamples = useCallback(() => {
     setLoading(true);
@@ -95,15 +88,6 @@ export default function App() {
   useEffect(() => {
     setContestInput(contest);
   }, [contest]);
-
-  useEffect(() => {
-    samples.forEach(sample => {
-      if (textAreaRefs.current[sample.name]) {
-        autoResize(textAreaRefs.current[sample.name].input);
-        autoResize(textAreaRefs.current[sample.name].output);
-      }
-    });
-  }, [samples]);
 
   useEffect(() => {
     if (editingSample && renameInputRef.current) {
@@ -399,7 +383,7 @@ export default function App() {
                 timeout={300}
                 classNames="sample-item"
               >
-                <Box ref={nodeRef}>
+                <Box ref={nodeRef} sx={{ border: '1px solid #ccc', padding: 2, borderRadius: 1 }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
                     {editingSample === sample.name ? (
                       <TextField
@@ -438,36 +422,20 @@ export default function App() {
                   <Stack direction="row" spacing={2} alignItems="flex-start">
                     <Box flex={1}>
                       <Typography variant="subtitle1">入力ファイル</Typography>
-                      <TextField
-                        inputRef={el => {
-                          if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
-                          textAreaRefs.current[sample.name].input = el;
-                        }}
+                      <Editor
+                        language="plaintext"
+                        theme="vs-dark"
                         value={sample.inputContent}
-                        onChange={e => handleContentChange(sample.name, 'inputContent', e.target.value)}
-                        onFocus={() => setActiveSample(sample.name)}
-                        onInput={e => autoResize(e.target)}
-                        multiline
-                        fullWidth
-                        minRows={1}
-                        InputProps={{ sx: { fontFamily: 'monospace' } }}
+                        onChange={(newValue) => handleContentChange(sample.name, 'inputContent', newValue)}
                       />
                     </Box>
                     <Box flex={1}>
                       <Typography variant="subtitle1">出力ファイル</Typography>
-                      <TextField
-                        inputRef={el => {
-                          if (!textAreaRefs.current[sample.name]) textAreaRefs.current[sample.name] = {};
-                          textAreaRefs.current[sample.name].output = el;
-                        }}
+                      <Editor
+                        language="plaintext"
+                        theme="vs-dark"
                         value={sample.outputContent}
-                        onChange={e => handleContentChange(sample.name, 'outputContent', e.target.value)}
-                        onFocus={() => setActiveSample(sample.name)}
-                        onInput={e => autoResize(e.target)}
-                        multiline
-                        fullWidth
-                        minRows={1}
-                        InputProps={{ sx: { fontFamily: 'monospace' } }}
+                        onChange={(newValue) => handleContentChange(sample.name, 'outputContent', newValue)}
                       />
                     </Box>
                   </Stack>
