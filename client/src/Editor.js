@@ -1,25 +1,54 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as monaco from 'monaco-editor';
 
-const Editor = ({ value, onChange, language, theme }) => {
+// Define a custom theme for the editor
+monaco.editor.defineTheme('customLight', {
+  base: 'vs', // Inherit from the built-in 'vs' (light) theme
+  inherit: true,
+  rules: [],
+  colors: {
+    'editorGutter.background': '#f0f0f0', // Background color for the editor gutter (line numbers)
+  }
+});
+
+const Editor = ({ value, onChange, language }) => {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
+  const [height, setHeight] = useState('auto');
 
   useEffect(() => {
     if (containerRef.current) {
       editorRef.current = monaco.editor.create(containerRef.current, {
         value,
         language,
-        theme,
+        theme: 'customLight', // Use the custom theme
         minimap: { enabled: false },
         wordWrap: 'on',
         scrollBeyondLastLine: false,
         automaticLayout: true,
+        glyphMargin: false,
+        folding: false,
+        renderLineHighlight: 'none',
+        scrollbar: {
+          vertical: 'hidden',
+          horizontal: 'hidden'
+        },
+        overviewRulerLanes: 0,
+        hideCursorInOverviewRuler: true,
+        overviewRulerBorder: false,
       });
+
+      const updateHeight = () => {
+        const contentHeight = editorRef.current.getContentHeight();
+        setHeight(`${contentHeight}px`);
+      };
 
       editorRef.current.onDidChangeModelContent(() => {
         onChange(editorRef.current.getValue());
+        updateHeight();
       });
+
+      updateHeight();
     }
 
     return () => {
@@ -35,13 +64,7 @@ const Editor = ({ value, onChange, language, theme }) => {
     }
   }, [value]);
 
-  useEffect(() => {
-    if (editorRef.current) {
-        monaco.editor.setTheme(theme);
-    }
-  }, [theme]);
-
-  return <div ref={containerRef} style={{ height: '200px', border: '1px solid #ccc' }}></div>;
+  return <div ref={containerRef} style={{ height, minHeight: '38px', border: '1px solid #ccc', borderRadius: '4px' }}></div>;
 };
 
 export default Editor;

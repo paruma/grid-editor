@@ -424,7 +424,6 @@ export default function App() {
                       <Typography variant="subtitle1">入力ファイル</Typography>
                       <Editor
                         language="plaintext"
-                        theme="vs-dark"
                         value={sample.inputContent}
                         onChange={(newValue) => handleContentChange(sample.name, 'inputContent', newValue)}
                       />
@@ -433,7 +432,6 @@ export default function App() {
                       <Typography variant="subtitle1">出力ファイル</Typography>
                       <Editor
                         language="plaintext"
-                        theme="vs-dark"
                         value={sample.outputContent}
                         onChange={(newValue) => handleContentChange(sample.name, 'outputContent', newValue)}
                       />
