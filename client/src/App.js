@@ -20,14 +20,16 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Editor from './Editor';
-import GridEditor from './GridEditor'; // Import the new GridEditor component
-import './App.css'; // アニメーション用のCSSをインポート
+import GridEditor from './GridEditor';
+import Header from './components/Header';
+import './App.css';
 
 export default function App() {
   return (
     <BrowserRouter>
+      <Header /> {/* Add Header component here */}
       <Routes>
         <Route path="/" element={<MainAppContent />} />
         <Route path="/grid-editor" element={<GridEditor />} />
@@ -379,7 +381,6 @@ function MainAppContent() { // Rename App to MainAppContent
           size="small"
         />
         <Button variant="outlined" onClick={handleCreate}>作成</Button>
-        <Button variant="outlined" component={Link} to="/grid-editor">グリッドエディタへ</Button>
       </Stack>
 
       {loading ? (
