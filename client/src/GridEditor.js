@@ -310,7 +310,7 @@ export default function GridEditor() {
 
       {grid.length > 0 && (
         <Box sx={{ mt: 4 }} onMouseLeave={handleMouseUp}> {/* Add onMouseLeave to stop drawing when mouse leaves grid area */}
-          <Typography variant="h6" gutterBottom>生成されたグリッド:</Typography>
+          
           <Grid container spacing={0} direction="column">
             {grid.map((row, rowIndex) => (
               <Grid item key={rowIndex}>
@@ -346,7 +346,7 @@ export default function GridEditor() {
             ))}
           </Grid>
           <Stack direction="row" spacing={2} mt={4} alignItems="center">
-            <Typography variant="h6" gutterBottom>AtCoder形式入力:</Typography>
+            <Typography variant="h6" gutterBottom>競プロ入力形式:</Typography>
             <Button variant="outlined" onClick={handleCopyClick}>コピー</Button>
           </Stack>
           <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
