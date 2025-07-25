@@ -57,6 +57,32 @@ export default function GridEditor() {
     };
   }, []);
 
+  // Add a useEffect for the copy functionality
+  useEffect(() => {
+    const handleCopy = (event) => {
+      // Only proceed if the copy event is not originating from an input or textarea
+      if (
+        event.target.tagName !== 'INPUT' &&
+        event.target.tagName !== 'TEXTAREA'
+      ) {
+        const atcoderFormat = `${height} ${width}\n` + grid.map(row => row.join('')).join('\n');
+        event.clipboardData.setData('text/plain', atcoderFormat);
+        event.preventDefault(); // Prevent default copy behavior (e.g., copying selected text)
+
+        // Show snackbar
+        setSnackbarMessage('コピーしました！');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      }
+    };
+
+    window.addEventListener('copy', handleCopy);
+
+    return () => {
+      window.removeEventListener('copy', handleCopy);
+    };
+  }, [grid, height, width]);
+
   const createEmptyGrid = (h, w) => {
     const newGrid = Array(h).fill(null).map(() => Array(w).fill('.'));
     setGrid(newGrid);
