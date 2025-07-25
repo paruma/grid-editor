@@ -26,6 +26,7 @@ export default function GridEditor() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [loadInput, setLoadInput] = useState('');
   const [isResizing, setIsResizing] = useState(false);
   const [initialMouseX, setInitialMouseX] = useState(0);
   const [initialMouseY, setInitialMouseY] = useState(0);
@@ -260,8 +261,46 @@ export default function GridEditor() {
     );
 
     setGrid(updatedGrid);
-    setHeight(newHeight.toString());
-    setWidth(newWidth.toString());
+    setHeight(newHeight.toString());    setWidth(newWidth.toString());  };
+
+  const handleLoadGridInput = () => {
+    try {
+      const lines = loadInput.trim().split('\n');
+      if (lines.length < 2) {
+        throw new Error('入力形式が正しくありません。\n例: 3 4\n####\n.#.#\n.##.');
+      }
+
+      const [hStr, wStr] = lines[0].split(' ');
+      const h = parseInt(hStr);
+      const w = parseInt(wStr);
+
+      if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) {
+        throw new Error('高さと幅は正の整数で指定してください。\n例: 3 4\n####\n.#.#\n.##.');
+      }
+
+      const gridLines = lines.slice(1);
+      if (gridLines.length !== h) {
+        throw new Error(`グリッドの行数が高さと一致しません。期待値: ${h}, 実際: ${gridLines.length}\n例: 3 4\n####\n.#.#\n.##.`);
+      }
+
+      const newGrid = gridLines.map((line, rIdx) => {
+        if (line.length !== w) {
+          throw new Error(`グリッドの${rIdx + 1}行目の文字数が幅と一致しません。期待値: ${w}, 実際: ${line.length}\n例: 3 4\n####\n.#.#\n.##.`);
+        }
+        return line.split('');
+      });
+
+      setHeight(h.toString());
+      setWidth(w.toString());
+      setGrid(newGrid);
+      setSnackbarMessage('グリッドを読み込みました！');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+    } catch (error) {
+      setSnackbarMessage(`エラー: ${error.message}`);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
   };
 
   return (
@@ -352,6 +391,23 @@ export default function GridEditor() {
           <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
             {`${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`}
           </Box>
+          <Stack direction="row" spacing={2} mt={4} alignItems="center">
+            <Typography variant="h6" gutterBottom>競プロ入力形式から読み込み:</Typography>
+            <TextField
+              label="入力例: 3 4\n####\n.#.#\n.##."
+              multiline
+              rows={4}
+              fullWidth
+              variant="outlined"
+              value={loadInput}
+              onChange={(e) => setLoadInput(e.target.value)}
+              InputLabelProps={{
+                shrink: true,
+                style: { color: '#aaa' } // Placeholder color
+              }}
+            />
+            <Button variant="contained" onClick={handleLoadGridInput}>読み込み</Button>
+          </Stack>
         </Box>
       )}
 
