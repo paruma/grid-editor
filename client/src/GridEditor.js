@@ -22,6 +22,7 @@ export default function GridEditor() {
   const [selectedChar, setSelectedChar] = useState('#');
   const [isDrawing, setIsDrawing] = useState(false);
   const [mouseButton, setMouseButton] = useState(null);
+  const [lastDrawnCell, setLastDrawnCell] = useState(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
@@ -124,6 +125,7 @@ export default function GridEditor() {
   const handleMouseDown = (rowIndex, colIndex, e) => {
     setMouseButton(e.button);
     setIsDrawing(true);
+    setLastDrawnCell({ row: rowIndex, col: colIndex });
     if (e.button === 2) { // Right click
       handleCellClick(rowIndex, colIndex, '.');
     } else { // Left click
@@ -134,15 +136,55 @@ export default function GridEditor() {
   const handleMouseUp = () => {
     setIsDrawing(false);
     setMouseButton(null);
+    setLastDrawnCell(null);
   };
 
   const handleMouseEnter = (rowIndex, colIndex) => {
-    if (isDrawing) {
-      if (mouseButton === 2) { // Right click drawing
-        handleCellClick(rowIndex, colIndex, '.');
-      } else { // Left click drawing
-        handleCellClick(rowIndex, colIndex);
+    if (isDrawing && lastDrawnCell) {
+      const startRow = lastDrawnCell.row;
+      const startCol = lastDrawnCell.col;
+      const endRow = rowIndex;
+      const endCol = colIndex;
+
+      const cellsToDraw = [];
+
+      // Simple line interpolation (Bresenham-like)
+      const dx = Math.abs(endCol - startCol);
+      const dy = Math.abs(endRow - startRow);
+      const sx = (startCol < endCol) ? 1 : -1;
+      const sy = (startRow < endRow) ? 1 : -1;
+      let err = dx - dy;
+
+      let x = startCol;
+      let y = startRow;
+
+      while (true) {
+        cellsToDraw.push({ row: y, col: x });
+
+        if (x === endCol && y === endRow) break;
+
+        const e2 = 2 * err;
+        if (e2 > -dy) {
+          err -= dy;
+          x += sx;
+        }
+        if (e2 < dx) {
+          err += dx;
+          y += sy;
+        }
       }
+
+      const charToSet = mouseButton === 2 ? '.' : selectedChar;
+      let newGrid = grid;
+      cellsToDraw.forEach(cell => {
+        newGrid = newGrid.map((row, rIdx) =>
+          row.map((c, cIdx) =>
+            (rIdx === cell.row && cIdx === cell.col) ? charToSet : c
+          )
+        );
+      });
+      setGrid(newGrid);
+      setLastDrawnCell({ row: rowIndex, col: colIndex });
     }
   };
 
