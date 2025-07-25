@@ -391,20 +391,21 @@ export default function GridEditor() {
           <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
             {`${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`}
           </Box>
-          <Stack direction="row" spacing={2} mt={4} alignItems="center">
+          <Stack direction="column" spacing={2} mt={4}>
             <Typography variant="h6" gutterBottom>競プロ入力形式から読み込み:</Typography>
             <TextField
-              label="入力例: 3 4\n####\n.#.#\n.##."
+              placeholder={`入力例:
+2 4
+####
+.#.#
+`}
               multiline
               rows={4}
               fullWidth
               variant="outlined"
               value={loadInput}
               onChange={(e) => setLoadInput(e.target.value)}
-              InputLabelProps={{
-                shrink: true,
-                style: { color: '#aaa' } // Placeholder color
-              }}
+              inputProps={{ style: { fontFamily: 'monospace' } }}
             />
             <Button variant="contained" onClick={handleLoadGridInput}>読み込み</Button>
           </Stack>
