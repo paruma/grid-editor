@@ -20,10 +20,23 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Editor from './Editor';
+import GridEditor from './GridEditor'; // Import the new GridEditor component
 import './App.css'; // アニメーション用のCSSをインポート
 
 export default function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainAppContent />} />
+        <Route path="/grid-editor" element={<GridEditor />} />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+
+function MainAppContent() { // Rename App to MainAppContent
   const [contest, setContest] = useState('abc408');
   const [contestInput, setContestInput] = useState('abc408');
   const [problem, setProblem] = useState('a');
@@ -34,7 +47,7 @@ export default function App() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success'); // New state for severity
   const [loading, setLoading] = useState(false);
-  const [activeSample, setActiveSample] = useState(null);
+  
   const [editingSample, setEditingSample] = useState(null);
   const [editingSampleName, setEditingSampleName] = useState('');
   const [deletingSample, setDeletingSample] = useState(null);
@@ -259,47 +272,47 @@ export default function App() {
   };
 
   const handleDuplicate = useCallback(async (originalName) => {
-    const originalSample = samples.find(s => s.name === originalName);
-    if (!originalSample) return;
+      const originalSample = samples.find(s => s.name === originalName);
+      if (!originalSample) return;
 
-    let newName = `${originalName}_copy`;
-    let counter = 1;
-    while (samples.some(s => s.name === newName)) {
-      counter++;
-      newName = `${originalName}_copy${counter}`;
-    }
+      let newName = `${originalName}_copy`;
+      let counter = 1;
+      while (samples.some(s => s.name === newName)) {
+        counter++;
+        newName = `${originalName}_copy${counter}`;
+      }
+      // eslint-disable-next-line no-loop-func
+      // バックエンドのAPIを呼び出してファイルを複製
+      const response = await fetch('http://localhost:3001/api/duplicate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contest, problem, originalName, newName }),
+      });
 
-    // バックエンドのAPIを呼び出してファイルを複製
-    const response = await fetch('http://localhost:3001/api/duplicate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contest, problem, originalName, newName }),
-    });
+      if (response.ok) {
+        const newSampleData = await response.json();
+        const newSample = {
+          name: newSampleData.newName,
+          inFile: originalSample.inFile.replace(originalName, newSampleData.newName),
+          outFile: originalSample.outFile.replace(originalName, newSampleData.newName),
+          commentFile: originalSample.commentFile ? originalSample.commentFile.replace(originalName, newSampleData.newName) : null,
+          inputContent: originalSample.inputContent,
+          outputContent: originalSample.outputContent,
+          originalInputContent: originalSample.inputContent,
+          originalOutputContent: originalSample.outputContent,
+        };
 
-    if (response.ok) {
-      const newSampleData = await response.json();
-      const newSample = {
-        name: newSampleData.newName,
-        inFile: originalSample.inFile.replace(originalName, newSampleData.newName),
-        outFile: originalSample.outFile.replace(originalName, newSampleData.newName),
-        commentFile: originalSample.commentFile ? originalSample.commentFile.replace(originalName, newSampleData.newName) : null,
-        inputContent: originalSample.inputContent,
-        outputContent: originalSample.outputContent,
-        originalInputContent: originalSample.inputContent,
-        originalOutputContent: originalSample.outputContent,
-      };
-
-      setSamples(prevSamples => [...prevSamples, newSample].sort((a, b) => a.name.localeCompare(b.name)));
-      setSnackbarMessage(`${newSampleData.newName} を複製しました！`);
-      setSnackbarSeverity('success'); // Set severity to success
-      setSaveSuccess(true);
-    } else {
-      console.error("Failed to duplicate sample");
-      setSnackbarMessage(`サンプルの複製に失敗しました。`);
-      setSnackbarSeverity('error'); // Set severity to error
-      setSaveSuccess(true);
-    }
-  }, [samples, contest, problem]);
+        setSamples(prevSamples => [...prevSamples, newSample].sort((a, b) => a.name.localeCompare(b.name)));
+        setSnackbarMessage(`${newSampleData.newName} を複製しました！`);
+        setSnackbarSeverity('success'); // Set severity to success
+        setSaveSuccess(true);
+      } else {
+        console.error("Failed to duplicate sample");
+        setSnackbarMessage(`サンプルの複製に失敗しました。`);
+        setSnackbarSeverity('error'); // Set severity to error
+        setSaveSuccess(true);
+      }
+    }, [samples, contest, problem]);
 
   const handleContentChange = (sampleName, field, value) => {
     setSamples(prevSamples =>
@@ -366,6 +379,7 @@ export default function App() {
           size="small"
         />
         <Button variant="outlined" onClick={handleCreate}>作成</Button>
+        <Button variant="outlined" component={Link} to="/grid-editor">グリッドエディタへ</Button>
       </Stack>
 
       {loading ? (

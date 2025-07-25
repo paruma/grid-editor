@@ -59,7 +59,7 @@ const Editor = ({ value, onChange, language }) => {
         editorRef.current.dispose();
       }
     };
-  }, []);
+  }, [language, onChange, value]);
 
   useEffect(() => {
     if (editorRef.current && value !== editorRef.current.getValue()) {
