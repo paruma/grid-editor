@@ -12,9 +12,13 @@ import {
 } from '@mui/material';
 
 export default function GridEditor() {
-  const [height, setHeight] = useState('');
-  const [width, setWidth] = useState('');
-  const [grid, setGrid] = useState([]);
+  const [height, setHeight] = useState('6');
+  const [width, setWidth] = useState('8');
+  const [grid, setGrid] = useState(() => {
+    const initialHeight = parseInt('6');
+    const initialWidth = parseInt('8');
+    return Array(initialHeight).fill(null).map(() => Array(initialWidth).fill('.'));
+  });
   const [selectedChar, setSelectedChar] = useState('#');
   const [isDrawing, setIsDrawing] = useState(false);
   const [mouseButton, setMouseButton] = useState(null);
@@ -22,31 +26,14 @@ export default function GridEditor() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Check if the event target is an input field
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-        return;
-      }
-      if (e.key.length === 1) { // Allow single character input
-        setSelectedChar(e.key);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
+  
 
-    const handleGlobalMouseUp = () => {
-      setIsDrawing(false);
-      setMouseButton(null);
-    };
-    window.addEventListener('mouseup', handleGlobalMouseUp);
+  const createEmptyGrid = (h, w) => {
+    const newGrid = Array(h).fill(null).map(() => Array(w).fill('.'));
+    setGrid(newGrid);
+  };
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('mouseup', handleGlobalMouseUp);
-    };
-  }, []);
-
-  const createEmptyGrid = () => {
+  const handleGenerateGrid = () => {
     const h = parseInt(height);
     const w = parseInt(width);
 
@@ -55,7 +42,18 @@ export default function GridEditor() {
       return;
     }
 
-    const newGrid = Array(h).fill(null).map(() => Array(w).fill('.'));
+    const currentGridHeight = grid.length;
+    const currentGridWidth = grid[0] ? grid[0].length : 0;
+
+    const newGrid = Array(h).fill(null).map((_, rIdx) =>
+      Array(w).fill(null).map((_, cIdx) => {
+        if (rIdx < currentGridHeight && cIdx < currentGridWidth) {
+          return grid[rIdx][cIdx];
+        } else {
+          return '.';
+        }
+      })
+    );
     setGrid(newGrid);
   };
 
@@ -132,7 +130,7 @@ export default function GridEditor() {
           onChange={(e) => setHeight(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              createEmptyGrid();
+              handleGenerateGrid();
             }
           }}
           size="small"
@@ -144,12 +142,12 @@ export default function GridEditor() {
           onChange={(e) => setWidth(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              createEmptyGrid();
+              handleGenerateGrid();
             }
           }}
           size="small"
         />
-        <Button variant="contained" onClick={createEmptyGrid}>グリッド生成</Button>
+        <Button variant="contained" onClick={handleGenerateGrid}>サイズ設定</Button>
       </Stack>
 
       <Stack direction="row" spacing={2} mb={2} alignItems="center">
