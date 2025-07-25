@@ -7,6 +7,8 @@ import {
   Box,
   Grid,
   Stack,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 
 export default function GridEditor() {
@@ -15,7 +17,10 @@ export default function GridEditor() {
   const [grid, setGrid] = useState([]);
   const [selectedChar, setSelectedChar] = useState('#');
   const [isDrawing, setIsDrawing] = useState(false);
-  const [mouseButton, setMouseButton] = useState(null); // New state to track which mouse button is pressed
+  const [mouseButton, setMouseButton] = useState(null);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -90,6 +95,29 @@ export default function GridEditor() {
 
   const handleContextMenu = (e) => {
     e.preventDefault(); // Prevent default context menu
+  };
+
+  const handleCopyClick = () => {
+    const textToCopy = `${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`;
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => {
+        setSnackbarMessage('コピーしました！');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      })
+      .catch(err => {
+        console.error('コピーに失敗しました: ', err);
+        setSnackbarMessage('コピーに失敗しました。');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      });
+  };
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
   };
 
   return (
@@ -172,12 +200,25 @@ export default function GridEditor() {
               </Grid>
             ))}
           </Grid>
-          <Typography variant="h6" gutterBottom sx={{ mt: 4 }}>AtCoder形式入力:</Typography>
+          <Stack direction="row" spacing={2} mt={4} alignItems="center">
+            <Typography variant="h6" gutterBottom>AtCoder形式入力:</Typography>
+            <Button variant="outlined" onClick={handleCopyClick}>コピー</Button>
+          </Stack>
           <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
             {`${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`}
           </Box>
         </Box>
       )}
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
