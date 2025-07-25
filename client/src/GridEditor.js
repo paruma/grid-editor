@@ -39,7 +39,7 @@ export default function GridEditor() {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
       }
-      if (e.key.length === 1) { // Allow single character input
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) { // Allow single character input, but not if Ctrl or Cmd is pressed
         setSelectedChar(e.key);
       }
     };
