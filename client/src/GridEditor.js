@@ -25,8 +25,37 @@ export default function GridEditor() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [isResizing, setIsResizing] = useState(false);
+  const [initialMouseX, setInitialMouseX] = useState(0);
+  const [initialMouseY, setInitialMouseY] = useState(0);
+  const [initialGridHeight, setInitialGridHeight] = useState(0);
+  const [initialGridWidth, setInitialGridWidth] = useState(0);
 
-  
+
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Check if the event target is an input field
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        return;
+      }
+      if (e.key.length === 1) { // Allow single character input
+        setSelectedChar(e.key);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    const handleGlobalMouseUp = () => {
+      setIsDrawing(false);
+      setMouseButton(null);
+    };
+    window.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
+  }, []);
 
   const createEmptyGrid = (h, w) => {
     const newGrid = Array(h).fill(null).map(() => Array(w).fill('.'));
@@ -118,6 +147,42 @@ export default function GridEditor() {
     setSnackbarOpen(false);
   };
 
+  const handleResizeMouseDown = (e) => {
+    setIsResizing(true);
+    setInitialMouseX(e.clientX);
+    setInitialMouseY(e.clientY);
+    setInitialGridHeight(parseInt(height));
+    setInitialGridWidth(parseInt(width));
+  };
+
+  const handleGlobalMouseMove = (e) => {
+    if (!isResizing) return;
+
+    const dx = Math.floor((e.clientX - initialMouseX) / 24); // Assuming 24px cell width
+    const dy = Math.floor((e.clientY - initialMouseY) / 24); // Assuming 24px cell height
+
+    let newWidth = Math.max(1, initialGridWidth + dx);
+    let newHeight = Math.max(1, initialGridHeight + dy);
+
+    // Update grid content based on new dimensions
+    const currentGridHeight = grid.length;
+    const currentGridWidth = grid[0] ? grid[0].length : 0;
+
+    const updatedGrid = Array(newHeight).fill(null).map((_, rIdx) =>
+      Array(newWidth).fill(null).map((_, cIdx) => {
+        if (rIdx < currentGridHeight && cIdx < currentGridWidth) {
+          return grid[rIdx][cIdx];
+        } else {
+          return '.';
+        }
+      })
+    );
+
+    setGrid(updatedGrid);
+    setHeight(newHeight.toString());
+    setWidth(newWidth.toString());
+  };
+
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>グリッドエディタ</Typography>
@@ -206,6 +271,21 @@ export default function GridEditor() {
             {`${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`}
           </Box>
         </Box>
+      )}
+
+      {grid.length > 0 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: 16,
+            height: 16,
+            backgroundColor: '#ccc',
+            cursor: 'nwse-resize',
+          }}
+          onMouseDown={handleResizeMouseDown}
+        />
       )}
 
       <Snackbar
