@@ -66,7 +66,7 @@ export default function GridEditor() {
         event.target.tagName !== 'INPUT' &&
         event.target.tagName !== 'TEXTAREA'
       ) {
-        const atcoderFormat = `${height} ${width}\n` + grid.map(row => row.join('')).join('\n');
+        const atcoderFormat = `${height} ${width}\n` + grid.map(row => row.join('')).join('\n') + '\n';
         event.clipboardData.setData('text/plain', atcoderFormat);
         event.preventDefault(); // Prevent default copy behavior (e.g., copying selected text)
 
@@ -206,7 +206,7 @@ export default function GridEditor() {
   };
 
   const handleCopyClick = () => {
-    const textToCopy = `${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`;
+    const textToCopy = `${height} ${width}\n${grid.map(row => row.join('')).join('\n')}\n`;
     navigator.clipboard.writeText(textToCopy)
       .then(() => {
         setSnackbarMessage('コピーしました！');
