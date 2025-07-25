@@ -113,6 +113,19 @@ export default function GridEditor() {
     setGrid(newGrid);
   };
 
+  const handleClearGrid = () => {
+    const h = parseInt(height);
+    const w = parseInt(width);
+    if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) {
+      // If height or width are invalid, use current grid dimensions to clear
+      const currentGridHeight = grid.length;
+      const currentGridWidth = grid[0] ? grid[0].length : 0;
+      createEmptyGrid(currentGridHeight, currentGridWidth);
+    } else {
+      createEmptyGrid(h, w);
+    }
+  };
+
   const handleCellClick = (rowIndex, colIndex, charToSet = selectedChar) => {
     const newGrid = grid.map((row, rIdx) =>
       row.map((cell, cIdx) =>
@@ -281,6 +294,7 @@ export default function GridEditor() {
           size="small"
         />
         <Button variant="contained" onClick={handleGenerateGrid}>サイズ設定</Button>
+        <Button variant="outlined" onClick={handleClearGrid}>クリア</Button>
       </Stack>
 
       <Stack direction="row" spacing={2} mb={2} alignItems="center">
