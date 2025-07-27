@@ -10,10 +10,17 @@ import {
   Snackbar,
   Alert,
   IconButton,
+  Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 const MAX_HISTORY_COUNT = 100;
 
@@ -34,6 +41,7 @@ export default function GridEditor() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [loadInput, setLoadInput] = useState('');
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const [history, setHistory] = useState([{ grid, height, width }]);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
@@ -288,19 +296,38 @@ export default function GridEditor() {
       <Typography variant="h4" gutterBottom>グリッドエディタ</Typography>
 
       <Stack direction="row" spacing={1} mb={2} alignItems="center">
-        <TextField label="高さ (h)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}}/>
-        <TextField label="幅 (w)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}}/>
-        <Button variant="contained" onClick={handleGenerateGrid} sx={{flexShrink: 0}}>サイズ設定</Button>
-        <Button variant="outlined" onClick={handleClearGrid} sx={{flexShrink: 0}}>クリア</Button>
-        <IconButton onClick={handleRotate}><Rotate90DegreesCwIcon /></IconButton>
+        <Tooltip title="グリッドの高さを設定します">
+          <TextField label="高さ (h)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}}/>
+        </Tooltip>
+        <Tooltip title="グリッドの幅を設定します">
+          <TextField label="幅 (w)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}}/>
+        </Tooltip>
+        <Tooltip title="グリッドを現在の高さと幅にリサイズします">
+          <Button variant="contained" onClick={handleGenerateGrid} sx={{flexShrink: 0}}>サイズ設定</Button>
+        </Tooltip>
+        <Tooltip title="グリッドの内容をすべて '.' にリセットします">
+          <Button variant="outlined" onClick={handleClearGrid} sx={{flexShrink: 0}}>クリア</Button>
+        </Tooltip>
+        <Tooltip title="グリッドを時計回りに90度回転します">
+          <IconButton onClick={handleRotate}><Rotate90DegreesCwIcon /></IconButton>
+        </Tooltip>
         <Box sx={{flexGrow: 1}} />
-        <IconButton onClick={handleUndo} disabled={currentHistoryIndex <= 0}><UndoIcon /></IconButton>
-        <IconButton onClick={handleRedo} disabled={currentHistoryIndex >= history.length - 1}><RedoIcon /></IconButton>
+        <Tooltip title="元に戻す (Ctrl+Z)">
+          <IconButton onClick={handleUndo} disabled={currentHistoryIndex <= 0}><UndoIcon /></IconButton>
+        </Tooltip>
+        <Tooltip title="やり直す (Ctrl+Y)">
+          <IconButton onClick={handleRedo} disabled={currentHistoryIndex >= history.length - 1}><RedoIcon /></IconButton>
+        </Tooltip>
+        <Tooltip title="ヘルプを表示します">
+          <IconButton onClick={() => setHelpOpen(true)}><HelpOutlineIcon /></IconButton>
+        </Tooltip>
       </Stack>
 
       <Stack direction="row" spacing={2} mb={2} alignItems="center">
         <Typography variant="subtitle1">選択中の文字:</Typography>
-        <TextField value={selectedChar} onChange={(e) => setSelectedChar(e.target.value.slice(0, 1))} size="small" sx={{ width: 50 }} inputProps={{ maxLength: 1 }} />
+        <Tooltip title="描画する文字を変更します。キーボードの1文字キーでも変更できます。">
+          <TextField value={selectedChar} onChange={(e) => setSelectedChar(e.target.value.slice(0, 1))} size="small" sx={{ width: 50 }} inputProps={{ maxLength: 1 }} />
+        </Tooltip>
       </Stack>
 
       <Box onContextMenu={handleContextMenu}>
@@ -332,7 +359,9 @@ export default function GridEditor() {
 
       <Stack direction="row" spacing={2} mt={4} alignItems="center">
         <Typography variant="h6" gutterBottom>競プロ入力形式:</Typography>
-        <Button variant="outlined" onClick={handleCopyClick}>コピー</Button>
+        <Tooltip title="現在のグリッドを競プロ形式でクリップボードにコピーします (Ctrl+C)">
+          <Button variant="outlined" onClick={handleCopyClick}>コピー</Button>
+        </Tooltip>
       </Stack>
       <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
         {`${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`}
@@ -345,8 +374,40 @@ export default function GridEditor() {
           onChange={(e) => setLoadInput(e.target.value)}
           inputProps={{ style: { fontFamily: 'monospace' } }}
         />
-        <Button variant="contained" onClick={handleLoadGridInput}>読み込み</Button>
+        <Tooltip title="入力されたテキストを解釈してグリッドに反映します">
+          <Button variant="contained" onClick={handleLoadGridInput}>読み込み</Button>
+        </Tooltip>
       </Stack>
+
+      <Dialog open={helpOpen} onClose={() => setHelpOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>グリッドエディタの使い方</DialogTitle>
+        <DialogContent>
+          <DialogContentText component="div">
+            <Typography variant="h6" gutterBottom>マウス操作</Typography>
+            <ul>
+              <li><b>左クリック/ドラッグ:</b> 選択中の文字でグリッドを描画します。</li>
+              <li><b>右クリック/ドラッグ:</b> グリッドを「.」で消去します。</li>
+            </ul>
+            <Typography variant="h6" gutterBottom>キーボードショートカット</Typography>
+            <ul>
+              <li><b>Ctrl/Cmd + Z:</b> 操作を元に戻します (Undo)。</li>
+              <li><b>Ctrl/Cmd + Y:</b> 操作をやり直します (Redo)。</li>
+              <li><b>Ctrl/Cmd + C:</b> 表示されている競プロ形式のテキストをコピーします。</li>
+              <li><b>任意の1文字キー:</b> 選択中の文字（描画に使う文字）を変更します。</li>
+            </ul>
+            <Typography variant="h6" gutterBottom>その他</Typography>
+            <ul>
+              <li><b>サイズ設定:</b> 指定した高さと幅でグリッドをリサイズします。</li>
+              <li><b>クリア:</b> グリッド全体を「.」で埋めます。</li>
+              <li><b>回転:</b> グリッド全体を時計回りに90度回転します。</li>
+              <li><b>読み込み:</b> テキストエリアの入力からグリッドを生成します。</li>
+            </ul>
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setHelpOpen(false)}>閉じる</Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleSnackbarClose}>
         <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
