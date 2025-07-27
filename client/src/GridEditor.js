@@ -15,6 +15,8 @@ import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw';
 
+const MAX_HISTORY_COUNT = 100;
+
 export default function GridEditor() {
   const [height, setHeight] = useState('6');
   const [width, setWidth] = useState('8');
@@ -44,10 +46,17 @@ export default function GridEditor() {
       return;
     }
 
-    const newHistory = history.slice(0, currentHistoryIndex + 1);
+    let newHistory = history.slice(0, currentHistoryIndex + 1);
     newHistory.push(newState);
+
+    if (newHistory.length > MAX_HISTORY_COUNT) {
+      newHistory = newHistory.slice(newHistory.length - MAX_HISTORY_COUNT);
+    }
+
+    const newIndex = newHistory.length - 1;
+
     setHistory(newHistory);
-    setCurrentHistoryIndex(newHistory.length - 1);
+    setCurrentHistoryIndex(newIndex);
   }, [history, currentHistoryIndex]);
 
   const handleUndo = useCallback(() => {
