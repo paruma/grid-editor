@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
+import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw';
 
 export default function GridEditor() {
   const [height, setHeight] = useState('6');
@@ -153,6 +154,29 @@ export default function GridEditor() {
     pushToHistory(newGrid, height, width);
   };
 
+  const handleRotate = () => {
+    const currentHeight = parseInt(height, 10);
+    const currentWidth = parseInt(width, 10);
+    const newHeight = currentWidth;
+    const newWidth = currentHeight;
+
+    const newGrid = Array(newHeight).fill(null).map(() => Array(newWidth).fill('.'));
+
+    for (let r = 0; r < currentHeight; r++) {
+      for (let c = 0; c < currentWidth; c++) {
+        newGrid[c][newWidth - 1 - r] = grid[r][c];
+      }
+    }
+
+    const newHeightStr = newHeight.toString();
+    const newWidthStr = newWidth.toString();
+
+    setHeight(newHeightStr);
+    setWidth(newWidthStr);
+    setGrid(newGrid);
+    pushToHistory(newGrid, newHeightStr, newWidthStr);
+  };
+
   const handleMouseDown = (rowIndex, colIndex, e) => {
     e.preventDefault();
     setIsDrawing(true);
@@ -259,6 +283,7 @@ export default function GridEditor() {
         <TextField label="幅 (w)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}}/>
         <Button variant="contained" onClick={handleGenerateGrid} sx={{flexShrink: 0}}>サイズ設定</Button>
         <Button variant="outlined" onClick={handleClearGrid} sx={{flexShrink: 0}}>クリア</Button>
+        <IconButton onClick={handleRotate}><Rotate90DegreesCwIcon /></IconButton>
         <Box sx={{flexGrow: 1}} />
         <IconButton onClick={handleUndo} disabled={currentHistoryIndex <= 0}><UndoIcon /></IconButton>
         <IconButton onClick={handleRedo} disabled={currentHistoryIndex >= history.length - 1}><RedoIcon /></IconButton>
