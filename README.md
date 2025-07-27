@@ -1,12 +1,6 @@
-# atcoder-test-editor
+# grid-editor
 
-## サーバ
-
-```sh
-node server/index.js
-```
-
-## クライアント
+## ローカル環境での実行
 
 ```sh
 cd client
