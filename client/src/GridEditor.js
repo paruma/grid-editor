@@ -17,13 +17,12 @@ import RedoIcon from '@mui/icons-material/Redo';
 export default function GridEditor() {
   const [height, setHeight] = useState('6');
   const [width, setWidth] = useState('8');
-  const [initialGrid] = useState(() => {
+  const [grid, setGrid] = useState(() => {
     const initialHeight = parseInt('6', 10);
     const initialWidth = parseInt('8', 10);
     return Array(initialHeight).fill(null).map(() => Array(initialWidth).fill('.'));
   });
 
-  const [grid, setGrid] = useState(initialGrid);
   const [selectedChar, setSelectedChar] = useState('#');
   const [isDrawing, setIsDrawing] = useState(false);
   const [mouseButton, setMouseButton] = useState(null);
@@ -33,15 +32,19 @@ export default function GridEditor() {
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [loadInput, setLoadInput] = useState('');
 
-  const [history, setHistory] = useState([initialGrid]);
+  const [history, setHistory] = useState([{ grid, height, width }]);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
 
-  const pushToHistory = useCallback((newGridState) => {
-    if (JSON.stringify(newGridState) === JSON.stringify(history[currentHistoryIndex])) {
+  const pushToHistory = useCallback((newGrid, newHeight, newWidth) => {
+    const newState = { grid: newGrid, height: newHeight, width: newWidth };
+    const currentSate = history[currentHistoryIndex];
+
+    if (JSON.stringify(newState) === JSON.stringify(currentSate)) {
       return;
     }
+
     const newHistory = history.slice(0, currentHistoryIndex + 1);
-    newHistory.push(newGridState);
+    newHistory.push(newState);
     setHistory(newHistory);
     setCurrentHistoryIndex(newHistory.length - 1);
   }, [history, currentHistoryIndex]);
@@ -50,7 +53,10 @@ export default function GridEditor() {
     if (currentHistoryIndex > 0) {
       const newIndex = currentHistoryIndex - 1;
       setCurrentHistoryIndex(newIndex);
-      setGrid(history[newIndex]);
+      const previousState = history[newIndex];
+      setGrid(previousState.grid);
+      setHeight(previousState.height);
+      setWidth(previousState.width);
     }
   }, [currentHistoryIndex, history]);
 
@@ -58,18 +64,21 @@ export default function GridEditor() {
     if (currentHistoryIndex < history.length - 1) {
       const newIndex = currentHistoryIndex + 1;
       setCurrentHistoryIndex(newIndex);
-      setGrid(history[newIndex]);
+      const nextState = history[newIndex];
+      setGrid(nextState.grid);
+      setHeight(nextState.height);
+      setWidth(nextState.width);
     }
   }, [currentHistoryIndex, history]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing) {
-      pushToHistory(grid);
+      pushToHistory(grid, height, width);
     }
     setIsDrawing(false);
     setMouseButton(null);
     setLastDrawnCell(null);
-  }, [isDrawing, grid, pushToHistory]);
+  }, [isDrawing, grid, height, width, pushToHistory]);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -133,7 +142,7 @@ export default function GridEditor() {
       })
     );
     setGrid(newGrid);
-    pushToHistory(newGrid);
+    pushToHistory(newGrid, height, width);
   };
 
   const handleClearGrid = () => {
@@ -141,7 +150,7 @@ export default function GridEditor() {
     const w = parseInt(width, 10);
     const newGrid = Array(h).fill(null).map(() => Array(w).fill('.'));
     setGrid(newGrid);
-    pushToHistory(newGrid);
+    pushToHistory(newGrid, height, width);
   };
 
   const handleMouseDown = (rowIndex, colIndex, e) => {
@@ -225,10 +234,12 @@ export default function GridEditor() {
         if (line.length !== w) throw new Error(`Row ${rIdx + 1} width mismatch`);
         return line.split('');
       });
-      setHeight(h.toString());
-      setWidth(w.toString());
+      const newHeight = h.toString();
+      const newWidth = w.toString();
+      setHeight(newHeight);
+      setWidth(newWidth);
       setGrid(newGrid);
-      pushToHistory(newGrid);
+      pushToHistory(newGrid, newHeight, newWidth);
       setSnackbarMessage('グリッドを読み込みました！');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
