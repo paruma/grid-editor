@@ -316,13 +316,13 @@ function MainAppContent() { // Rename App to MainAppContent
       }
     }, [samples, contest, problem]);
 
-  const handleContentChange = (sampleName, field, value) => {
+  const handleContentChange = useCallback((sampleName, field, value) => {
     setSamples(prevSamples =>
       prevSamples.map(s =>
         s.name === sampleName ? { ...s, [field]: value } : s
       )
     );
-  };
+  }, []);
 
   const handleProblemKeyDown = (e) => {
     if (e.key === 'Enter') {

@@ -15,10 +15,15 @@ const Editor = ({ value, onChange, language }) => {
   const editorRef = useRef(null);
   const containerRef = useRef(null);
   const [height, setHeight] = useState('auto');
+  const onChangeRef = useRef(onChange);
 
   useEffect(() => {
-    if (containerRef.current) {
-      editorRef.current = monaco.editor.create(containerRef.current, {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
+  useEffect(() => {
+    if (containerRef.current && !editorRef.current) {
+      const editor = monaco.editor.create(containerRef.current, {
         value,
         language,
         theme: 'customLight', // Use the custom theme
@@ -41,13 +46,17 @@ const Editor = ({ value, onChange, language }) => {
         overviewRulerBorder: false,
       });
 
+      editorRef.current = editor;
+
       const updateHeight = () => {
-        const contentHeight = editorRef.current.getContentHeight();
+        const contentHeight = editor.getContentHeight();
         setHeight(`${contentHeight}px`);
       };
 
-      editorRef.current.onDidChangeModelContent(() => {
-        onChange(editorRef.current.getValue());
+      editor.onDidChangeModelContent(() => {
+        if (onChangeRef.current) {
+          onChangeRef.current(editor.getValue());
+        }
         updateHeight();
       });
 
@@ -57,9 +66,11 @@ const Editor = ({ value, onChange, language }) => {
     return () => {
       if (editorRef.current) {
         editorRef.current.dispose();
+        editorRef.current = null;
       }
     };
-  }, [language, onChange, value]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once
 
   useEffect(() => {
     if (editorRef.current && value !== editorRef.current.getValue()) {
@@ -70,4 +81,4 @@ const Editor = ({ value, onChange, language }) => {
   return <div ref={containerRef} style={{ height, minHeight: '38px', border: '1px solid #ccc', borderRadius: '4px' }}></div>;
 };
 
-export default Editor;
+export default React.memo(Editor);
