@@ -1,14 +1,12 @@
-# AtCoder Test Editor
+# Grid Editor
 
 ## 概要
 
-このプロジェクトは、AtCoderのコンテスト問題を解く際のテストケースを管理するためのWebアプリケーションです。
+このアプリケーションは競プロに特化したグリッドエディタです。Web アプリケーションとして提供します。
 
 ## 技術スタック
 
-*   **フロントエンド:** React (Create React App), Material-UI, react-transition-group, Monaco Editor
-*   **バックエンド:** Node.js, Express
-*   **データストレージ:** ローカルファイルシステム
+*   **フロントエンド:** React (Create React App), Material-UI
 
 ## 機能
 
@@ -48,32 +46,12 @@
 *   `Ctrl + C` (Mac の場合は `Cmd + C`) でAtCoder形式の入力をコピーできます（入力フィールドにフォーカスがある場合は除く）。コピー時にはスナックバーで通知されます。
 *   `Ctrl` または `Cmd` キーが押されている間は、選択中の文字が変更されません。
 
-### その他
-
-*   **ヘッダー**: アプリケーションのタイトルと、テストケース編集画面、グリッドエディタ画面へのナビゲーションリンクを含むヘッダーを追加しました。
-
-## ディレクトリ構造
-
-*   `client/`: フロントエンドのReactアプリケーション
-*   `server/`: バックエンドのExpressサーバー
-*   `start.sh`: 開発サーバーを起動するためのスクリプト
-
-## APIエンドポイント
-
-*   `GET /api/tests?contest=<contest>&problem=<problem>`: 指定されたコンテストと問題のテストケース一覧を取得します。
-*   `GET /api/test/:filename(*)`: 指定されたテストケースのファイルの内容を取得します。
-*   `POST /api/test/:filename(*)`: 指定されたテストケースのファイルに内容を書き込みます。
-*   `POST /api/rename`: サンプル名を変更します。リクエストボディ: `{ contest, problem, oldName, newName }`
-*   `DELETE /api/sample?contest=<contest>&problem=<problem>&name=<name>`: 指定されたサンプルを削除します。
-*   `POST /api/duplicate`: 指定されたサンプルを複製します。リクエストボディ: `{ contest, problem, originalName, newName? }`
 
 ## 実行方法
 
-```bash
-./start.sh
+```sh
+npm start
 ```
-
-これにより、フロントエンド（`http://localhost:3000`）とバックエンド（`http://localhost:3001`）が起動します。
 
 ## 補足
 
@@ -83,9 +61,4 @@
 
 ## 今後の改善案 (検討中)
 
-*   **UI/UX:**
-    *   ダークモード
-    *   キーボードショートカットの拡張 (Tabキーでの編集部分切り替えなど)
-    *   視覚的な空白文字表示 (行末の空白の可視化など)
-    *   入力データの構造化表示と編集 (グリッドエディタなど)
-* グリッドエディタの undo/redo 機能
+* 入力形式がおかしい場合に詳しくエラーメッセージを表示させる機能
