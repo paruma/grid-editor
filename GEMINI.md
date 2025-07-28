@@ -53,4 +53,3 @@ npm start
     * gif を記載
     * など
 * Twitter に投稿する機能
-* ライセンス
