@@ -21,6 +21,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import XIcon from '@mui/icons-material/X';
 
 const MAX_HISTORY_COUNT = 100;
 
@@ -66,6 +67,33 @@ export default function GridEditor() {
     setHistory(newHistory);
     setCurrentHistoryIndex(newIndex);
   }, [history, currentHistoryIndex]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const h = params.get('h');
+    const w = params.get('w');
+    const data = params.get('data');
+
+    if (h && w && data) {
+      const newHeight = parseInt(h, 10);
+      const newWidth = parseInt(w, 10);
+
+      if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0 && data.length === newHeight * newWidth) {
+        const newGrid = [];
+        for (let i = 0; i < newHeight; i++) {
+          newGrid.push(data.substring(i * newWidth, (i + 1) * newWidth).split(''));
+        }
+        
+        setHeight(h);
+        setWidth(w);
+        setGrid(newGrid);
+
+        const initialState = { grid: newGrid, height: h, width: w };
+        setHistory([initialState]);
+        setCurrentHistoryIndex(0);
+      }
+    }
+  }, []);
 
   const handleUndo = useCallback(() => {
     if (currentHistoryIndex > 0) {
@@ -256,6 +284,18 @@ export default function GridEditor() {
     });
   };
 
+  const handleShareToXClick = () => {
+    const gridData = grid.map(row => row.join('')).join('');
+    const params = new URLSearchParams();
+    params.set('h', height);
+    params.set('w', width);
+    params.set('data', gridData);
+
+    const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
+    const tweetUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&hashtags=GridEditor`;
+    window.open(tweetUrl, '_blank');
+  };
+
   const handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') return;
     setSnackbarOpen(false);
@@ -361,6 +401,9 @@ export default function GridEditor() {
         <Typography variant="h6" gutterBottom>競プロ入力形式:</Typography>
         <Tooltip title="現在のグリッドを競プロ形式でクリップボードにコピーします (Ctrl+C)">
           <Button variant="outlined" onClick={handleCopyClick}>コピー</Button>
+        </Tooltip>
+        <Tooltip title="現在のグリッドをXでシェアします">
+          <IconButton onClick={handleShareToXClick}><XIcon /></IconButton>
         </Tooltip>
       </Stack>
       <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
