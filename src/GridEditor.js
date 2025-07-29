@@ -69,29 +69,37 @@ export default function GridEditor() {
   }, [history, currentHistoryIndex]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const h = params.get('h');
-    const w = params.get('w');
-    const data = params.get('data');
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const h = params.get('h');
+      const w = params.get('w');
+      const encodedData = params.get('data');
 
-    if (h && w && data) {
-      const newHeight = parseInt(h, 10);
-      const newWidth = parseInt(w, 10);
+      if (h && w && encodedData) {
+        const newHeight = parseInt(h, 10);
+        const newWidth = parseInt(w, 10);
 
-      if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0 && data.length === newHeight * newWidth) {
-        const newGrid = [];
-        for (let i = 0; i < newHeight; i++) {
-          newGrid.push(data.substring(i * newWidth, (i + 1) * newWidth).split(''));
+        let data = encodedData.replace(/-/g, '+').replace(/_/g, '/');
+        const decodedData = atob(data);
+
+        if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0 && decodedData.length === newHeight * newWidth) {
+          const newGrid = [];
+          for (let i = 0; i < newHeight; i++) {
+            newGrid.push(decodedData.substring(i * newWidth, (i + 1) * newWidth).split(''));
+          }
+          
+          setHeight(h);
+          setWidth(w);
+          setGrid(newGrid);
+
+          const initialState = { grid: newGrid, height: h, width: w };
+          setHistory([initialState]);
+          setCurrentHistoryIndex(0);
         }
-        
-        setHeight(h);
-        setWidth(w);
-        setGrid(newGrid);
-
-        const initialState = { grid: newGrid, height: h, width: w };
-        setHistory([initialState]);
-        setCurrentHistoryIndex(0);
       }
+    } catch (error) {
+      console.error("Failed to decode grid data from URL:", error);
+      // エラーが発生した場合は、デフォルトのグリッドでアプリケーションを初期化します。
     }
   }, []);
 
@@ -286,10 +294,12 @@ export default function GridEditor() {
 
   const handleShareToXClick = () => {
     const gridData = grid.map(row => row.join('')).join('');
+    const encodedData = btoa(gridData).replace(/\+/g, '-').replace(/\//g, '_');
+
     const params = new URLSearchParams();
     params.set('h', height);
     params.set('w', width);
-    params.set('data', gridData);
+    params.set('data', encodedData);
 
     const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     const tweetUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&hashtags=GridEditor`;

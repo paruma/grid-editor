@@ -53,4 +53,7 @@ npm start
 * README.md を詳しくする
     * gif を記載
     * など
-
+* Twitter 投稿機能
+    * 文言変更
+* タイトル、説明変更
+    * 例えば Slack に貼ったときのあれ
