@@ -51,4 +51,3 @@ npm start
 * README.md を詳しくする
     * gif を記載
     * など
-* GitHub へのリンク

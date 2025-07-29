@@ -21,6 +21,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
 import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import XIcon from '@mui/icons-material/X';
 
 const MAX_HISTORY_COUNT = 100;
@@ -371,6 +372,9 @@ export default function GridEditor() {
         </Tooltip>
         <Tooltip title="ヘルプを表示します">
           <IconButton onClick={() => setHelpOpen(true)}><HelpOutlineIcon /></IconButton>
+        </Tooltip>
+        <Tooltip title="GitHubリポジトリを見る">
+          <IconButton href="https://github.com/paruma/grid-editor" target="_blank" rel="noopener noreferrer"><GitHubIcon /></IconButton>
         </Tooltip>
       </Stack>
 
