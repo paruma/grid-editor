@@ -51,5 +51,4 @@ npm start
 * README.md を詳しくする
     * gif を記載
     * など
-* Twitter 投稿機能
-    * 文言変更
+* GitHub へのリンク

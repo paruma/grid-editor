@@ -302,7 +302,8 @@ export default function GridEditor() {
     params.set('data', encodedData);
 
     const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-    const tweetUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&hashtags=GridEditor`;
+    const text = "Grid Editor でグリッドを作ったよ！";
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&hashtags=GridEditor`;
     window.open(tweetUrl, '_blank');
   };
 
