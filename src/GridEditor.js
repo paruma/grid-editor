@@ -412,9 +412,6 @@ export default function GridEditor() {
         <Tooltip title="現在のグリッドを競プロ形式でクリップボードにコピーします (Ctrl+C)">
           <Button variant="outlined" onClick={handleCopyClick}>コピー</Button>
         </Tooltip>
-        <Tooltip title="現在のグリッドをXでシェアします">
-          <IconButton onClick={handleShareToXClick}><XIcon /></IconButton>
-        </Tooltip>
       </Stack>
       <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
         {`${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`}
@@ -430,6 +427,11 @@ export default function GridEditor() {
         <Tooltip title="入力されたテキストを解釈してグリッドに反映します">
           <Button variant="contained" onClick={handleLoadGridInput}>読み込み</Button>
         </Tooltip>
+        <Stack direction="row" justifyContent="flex-end">
+          <Tooltip title="現在のグリッドをXでシェアします">
+            <IconButton onClick={handleShareToXClick}><XIcon /></IconButton>
+          </Tooltip>
+        </Stack>
       </Stack>
 
       <Dialog open={helpOpen} onClose={() => setHelpOpen(false)} maxWidth="sm" fullWidth>
