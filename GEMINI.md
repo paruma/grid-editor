@@ -51,3 +51,5 @@ npm start
 * README.md を詳しくする
     * gif を記載
     * など
+* スマホ対応
+* TypeScript 化
