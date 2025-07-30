@@ -52,4 +52,3 @@ npm start
     * gif を記載
     * など
 * スマホ対応
-* TypeScript 化
