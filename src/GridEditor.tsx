@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  AlertColor,
 } from '@mui/material';
 import UndoIcon from '@mui/icons-material/Undo';
 import RedoIcon from '@mui/icons-material/Redo';
@@ -26,10 +27,21 @@ import XIcon from '@mui/icons-material/X';
 
 const MAX_HISTORY_COUNT = 100;
 
+type GridType = string[][];
+type HistoryState = {
+  grid: GridType;
+  height: string;
+  width: string;
+};
+type Cell = {
+  row: number;
+  col: number;
+};
+
 export default function GridEditor() {
   const [height, setHeight] = useState('6');
   const [width, setWidth] = useState('8');
-  const [grid, setGrid] = useState(() => {
+  const [grid, setGrid] = useState<GridType>(() => {
     const initialHeight = parseInt('6', 10);
     const initialWidth = parseInt('8', 10);
     return Array(initialHeight).fill(null).map(() => Array(initialWidth).fill('.'));
@@ -37,18 +49,18 @@ export default function GridEditor() {
 
   const [selectedChar, setSelectedChar] = useState('#');
   const [isDrawing, setIsDrawing] = useState(false);
-  const [mouseButton, setMouseButton] = useState(null);
-  const [lastDrawnCell, setLastDrawnCell] = useState(null);
+  const [mouseButton, setMouseButton] = useState<number | null>(null);
+  const [lastDrawnCell, setLastDrawnCell] = useState<Cell | null>(null);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [snackbarSeverity, setSnackbarSeverity] = useState<AlertColor>('success');
   const [loadInput, setLoadInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const [history, setHistory] = useState([{ grid, height, width }]);
+  const [history, setHistory] = useState<HistoryState[]>([{ grid, height, width }]);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
 
-  const pushToHistory = useCallback((newGrid, newHeight, newWidth) => {
+  const pushToHistory = useCallback((newGrid: GridType, newHeight: string, newWidth: string) => {
     const newState = { grid: newGrid, height: newHeight, width: newWidth };
     const currentSate = history[currentHistoryIndex];
 
@@ -84,7 +96,7 @@ export default function GridEditor() {
         const decodedData = atob(data);
 
         if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0 && decodedData.length === newHeight * newWidth) {
-          const newGrid = [];
+          const newGrid: GridType = [];
           for (let i = 0; i < newHeight; i++) {
             newGrid.push(decodedData.substring(i * newWidth, (i + 1) * newWidth).split(''));
           }
@@ -98,7 +110,7 @@ export default function GridEditor() {
           setCurrentHistoryIndex(0);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to decode grid data from URL:", error);
       // エラーが発生した場合は、デフォルトのグリッドでアプリケーションを初期化します。
     }
@@ -136,8 +148,8 @@ export default function GridEditor() {
   }, [isDrawing, grid, height, width, pushToHistory]);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
         return;
       }
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -165,10 +177,10 @@ export default function GridEditor() {
   }, [handleUndo, handleRedo, handleMouseUp]);
 
   useEffect(() => {
-    const handleCopy = (event) => {
-      if (event.target.tagName !== 'INPUT' && event.target.tagName !== 'TEXTAREA') {
+    const handleCopy = (event: ClipboardEvent) => {
+      if ((event.target as HTMLElement).tagName !== 'INPUT' && (event.target as HTMLElement).tagName !== 'TEXTAREA') {
         const atcoderFormat = `${height} ${width}\n` + grid.map(row => row.join('')).join('\n') + '\n';
-        event.clipboardData.setData('text/plain', atcoderFormat);
+        event.clipboardData!.setData('text/plain', atcoderFormat);
         event.preventDefault();
         setSnackbarMessage('コピーしました！');
         setSnackbarSeverity('success');
@@ -176,8 +188,10 @@ export default function GridEditor() {
       }
     };
 
-    window.addEventListener('copy', handleCopy);
-    return () => window.removeEventListener('copy', handleCopy);
+    const listener = (e: Event) => handleCopy(e as ClipboardEvent);
+
+    window.addEventListener('copy', listener);
+    return () => window.removeEventListener('copy', listener);
   }, [grid, height, width]);
 
   const handleGenerateGrid = () => {
@@ -187,7 +201,7 @@ export default function GridEditor() {
       alert('高さと幅は正の整数で入力してください。');
       return;
     }
-    const newGrid = Array(h).fill(null).map((_, rIdx) =>
+    const newGrid: GridType = Array(h).fill(null).map((_, rIdx) =>
       Array(w).fill(null).map((_, cIdx) => {
         if (rIdx < grid.length && cIdx < (grid[0]?.length || 0)) {
           return grid[rIdx][cIdx];
@@ -203,7 +217,7 @@ export default function GridEditor() {
   const handleClearGrid = () => {
     const h = parseInt(height, 10);
     const w = parseInt(width, 10);
-    const newGrid = Array(h).fill(null).map(() => Array(w).fill('.'));
+    const newGrid: GridType = Array(h).fill(null).map(() => Array(w).fill('.'));
     setGrid(newGrid);
     pushToHistory(newGrid, height, width);
   };
@@ -214,7 +228,7 @@ export default function GridEditor() {
     const newHeight = currentWidth;
     const newWidth = currentHeight;
 
-    const newGrid = Array(newHeight).fill(null).map(() => Array(newWidth).fill('.'));
+    const newGrid: GridType = Array(newHeight).fill(null).map(() => Array(newWidth).fill('.'));
 
     for (let r = 0; r < currentHeight; r++) {
       for (let c = 0; c < currentWidth; c++) {
@@ -231,7 +245,7 @@ export default function GridEditor() {
     pushToHistory(newGrid, newHeightStr, newWidthStr);
   };
 
-  const handleMouseDown = (rowIndex, colIndex, e) => {
+  const handleMouseDown = (rowIndex: number, colIndex: number, e: React.MouseEvent<HTMLElement>) => {
     e.preventDefault();
     setIsDrawing(true);
     setMouseButton(e.button);
@@ -245,7 +259,7 @@ export default function GridEditor() {
     setGrid(newGrid);
   };
 
-  const handleMouseEnter = (rowIndex, colIndex) => {
+  const handleMouseEnter = (rowIndex: number, colIndex: number) => {
     if (!isDrawing || !lastDrawnCell) return;
 
     const startRow = lastDrawnCell.row;
@@ -277,7 +291,7 @@ export default function GridEditor() {
     setLastDrawnCell({ row: rowIndex, col: colIndex });
   };
 
-  const handleContextMenu = (e) => e.preventDefault();
+  const handleContextMenu = (e: React.MouseEvent<HTMLElement>) => e.preventDefault();
 
   const handleCopyClick = () => {
     const textToCopy = `${height} ${width}\n${grid.map(row => row.join('')).join('\n')}\n`;
@@ -308,7 +322,7 @@ export default function GridEditor() {
     window.open(tweetUrl, '_blank');
   };
 
-  const handleSnackbarClose = (event, reason) => {
+  const handleSnackbarClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') return;
     setSnackbarOpen(false);
   };
@@ -323,7 +337,7 @@ export default function GridEditor() {
       if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) throw new Error('Invalid height/width');
       const gridLines = lines.slice(1);
       if (gridLines.length !== h) throw new Error('Grid height mismatch');
-      const newGrid = gridLines.map((line, rIdx) => {
+      const newGrid: GridType = gridLines.map((line, rIdx) => {
         if (line.length !== w) throw new Error(`Row ${rIdx + 1} width mismatch`);
         return line.split('');
       });
@@ -336,7 +350,7 @@ export default function GridEditor() {
       setSnackbarMessage('グリッドを読み込みました！');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       setSnackbarMessage(`エラー: ${error.message}`);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -388,10 +402,10 @@ export default function GridEditor() {
       <Box onContextMenu={handleContextMenu}>
         <Grid container spacing={0} direction="column" sx={{ cursor: 'cell' }}>
           {grid.map((row, rowIndex) => (
-            <Grid item key={rowIndex}>
+            <Grid key={rowIndex}>
               <Grid container spacing={0}>
                 {row.map((cell, colIndex) => (
-                  <Grid item key={`${rowIndex}-${colIndex}`}>
+                  <Grid key={`${rowIndex}-${colIndex}`}>
                     <Box
                       sx={{
                         width: 24, height: 24, border: '1px solid #eee', display: 'flex',
