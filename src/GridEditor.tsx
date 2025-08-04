@@ -439,11 +439,11 @@ export default function GridEditor() {
         </Tooltip>
       </Stack>
 
-      <Box onContextMenu={handleContextMenu} onTouchMove={handleTouchMove} sx={{ touchAction: 'none' }}>
-        <Grid container spacing={0} direction="column" sx={{ cursor: 'cell' }}>
+      <Box onContextMenu={handleContextMenu} onTouchMove={handleTouchMove} sx={{ touchAction: 'none', overflowX: 'auto' }}>
+        <Grid container spacing={0} direction="column" sx={{ cursor: 'cell', width: 'fit-content' }}>
           {grid.map((row, rowIndex) => (
             <Grid key={rowIndex}>
-              <Grid container spacing={0}>
+              <Grid container spacing={0} sx={{ flexWrap: 'nowrap' }}>
                 {row.map((cell, colIndex) => (
                   <Grid key={`${rowIndex}-${colIndex}`}>
                     <Box
