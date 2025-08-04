@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Container,
   Typography,
@@ -56,6 +57,8 @@ export default function GridEditor() {
   const [snackbarSeverity, setSnackbarSeverity] = useState<AlertColor>('success');
   const [loadInput, setLoadInput] = useState('');
   const [helpOpen, setHelpOpen] = useState(false);
+  const heightInputRef = useRef<HTMLInputElement>(null);
+  const widthInputRef = useRef<HTMLInputElement>(null);
 
   const [history, setHistory] = useState<HistoryState[]>([{ grid, height, width }]);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
@@ -248,6 +251,9 @@ export default function GridEditor() {
   };
 
   const handleMouseDown = (rowIndex: number, colIndex: number, e: React.MouseEvent<HTMLElement>) => {
+    if (document.activeElement === heightInputRef.current || document.activeElement === widthInputRef.current) {
+      (document.activeElement as HTMLElement).blur();
+    }
     e.preventDefault();
     setIsDrawing(true);
     setMouseButton(e.button);
@@ -262,6 +268,9 @@ export default function GridEditor() {
   };
 
   const handleTouchStart = (rowIndex: number, colIndex: number, e: React.TouchEvent<HTMLElement>) => {
+    if (document.activeElement === heightInputRef.current || document.activeElement === widthInputRef.current) {
+      (document.activeElement as HTMLElement).blur();
+    }
     e.preventDefault();
     setIsDrawing(true);
     setMouseButton(0); // Treat all touches as left-click
@@ -394,10 +403,10 @@ export default function GridEditor() {
 
       <Stack direction="row" spacing={1} mb={2} alignItems="center">
         <Tooltip title="グリッドの高さを設定します">
-          <TextField label="高さ (h)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}}/>
+          <TextField label="高さ (h)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}} inputRef={heightInputRef}/>
         </Tooltip>
         <Tooltip title="グリッドの幅を設定します">
-          <TextField label="幅 (w)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}}/>
+          <TextField label="幅 (w)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}} inputRef={widthInputRef}/>
         </Tooltip>
         <Tooltip title="グリッドを現在の高さと幅にリサイズします">
           <Button variant="contained" onClick={handleGenerateGrid} sx={{flexShrink: 0}}>サイズ設定</Button>
