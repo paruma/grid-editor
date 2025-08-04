@@ -138,7 +138,7 @@ export default function GridEditor() {
     }
   }, [currentHistoryIndex, history]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleDrawingEnd = useCallback(() => {
     if (isDrawing) {
       pushToHistory(grid, height, width);
     }
@@ -168,13 +168,15 @@ export default function GridEditor() {
     };
 
     window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mouseup', handleDrawingEnd);
+    window.addEventListener('touchend', handleDrawingEnd);
 
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mouseup', handleDrawingEnd);
+      window.removeEventListener('touchend', handleDrawingEnd);
     };
-  }, [handleUndo, handleRedo, handleMouseUp]);
+  }, [handleUndo, handleRedo, handleDrawingEnd]);
 
   useEffect(() => {
     const handleCopy = (event: ClipboardEvent) => {
@@ -257,6 +259,35 @@ export default function GridEditor() {
       )
     );
     setGrid(newGrid);
+  };
+
+  const handleTouchStart = (rowIndex: number, colIndex: number, e: React.TouchEvent<HTMLElement>) => {
+    e.preventDefault();
+    setIsDrawing(true);
+    setMouseButton(0); // Treat all touches as left-click
+    setLastDrawnCell({ row: rowIndex, col: colIndex });
+    const newGrid = grid.map((row, rIdx) =>
+      row.map((cell, cIdx) =>
+        (rIdx === rowIndex && cIdx === colIndex) ? selectedChar : cell
+      )
+    );
+    setGrid(newGrid);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLElement>) => {
+    e.preventDefault();
+    if (!isDrawing) return;
+
+    const touch = e.touches[0];
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (element) {
+      const rowIndex = parseInt(element.getAttribute('data-row') || '-1', 10);
+      const colIndex = parseInt(element.getAttribute('data-col') || '-1', 10);
+
+      if (rowIndex !== -1 && colIndex !== -1) {
+        handleMouseEnter(rowIndex, colIndex);
+      }
+    }
   };
 
   const handleMouseEnter = (rowIndex: number, colIndex: number) => {
@@ -399,7 +430,7 @@ export default function GridEditor() {
         </Tooltip>
       </Stack>
 
-      <Box onContextMenu={handleContextMenu}>
+      <Box onContextMenu={handleContextMenu} onTouchMove={handleTouchMove} sx={{ touchAction: 'none' }}>
         <Grid container spacing={0} direction="column" sx={{ cursor: 'cell' }}>
           {grid.map((row, rowIndex) => (
             <Grid key={rowIndex}>
@@ -407,6 +438,8 @@ export default function GridEditor() {
                 {row.map((cell, colIndex) => (
                   <Grid key={`${rowIndex}-${colIndex}`}>
                     <Box
+                      data-row={rowIndex}
+                      data-col={colIndex}
                       sx={{
                         width: 24, height: 24, border: '1px solid #eee', display: 'flex',
                         justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem',
@@ -415,6 +448,7 @@ export default function GridEditor() {
                       }}
                       onMouseDown={(e) => handleMouseDown(rowIndex, colIndex, e)}
                       onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
+                      onTouchStart={(e) => handleTouchStart(rowIndex, colIndex, e)}
                     >
                       {cell}
                     </Box>
