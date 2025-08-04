@@ -361,15 +361,15 @@ export default function GridEditor() {
   const handleLoadGridInput = () => {
     try {
       const lines = loadInput.trim().split('\n');
-      if (lines.length < 1) throw new Error('Invalid input format');
+      if (lines.length < 1) throw new Error('入力が空か、形式が正しくありません。');
       const [hStr, wStr] = lines[0].split(' ');
       const h = parseInt(hStr, 10);
       const w = parseInt(wStr, 10);
-      if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) throw new Error('Invalid height/width');
+      if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) throw new Error('高さと幅の指定が正しくありません。入力の1行目に、2つの正の整数をスペース区切りで指定してください。例: 6 8');
       const gridLines = lines.slice(1);
-      if (gridLines.length !== h) throw new Error('Grid height mismatch');
+      if (gridLines.length !== h) throw new Error(`入力で指定された高さ(${h})と、実際のグリッドの行数(${gridLines.length})が異なります。`);
       const newGrid: GridType = gridLines.map((line, rIdx) => {
-        if (line.length !== w) throw new Error(`Row ${rIdx + 1} width mismatch`);
+        if (line.length !== w) throw new Error(`グリッドの${rIdx + 1}行目の文字数(${line.length})が、入力で指定された幅(${w})と一致しません。`);
         return line.split('');
       });
       const newHeight = h.toString();
