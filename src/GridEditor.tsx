@@ -254,14 +254,25 @@ export default function GridEditor() {
       const h = parseInt(hStr, 10);
       const w = parseInt(wStr, 10);
       if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0)
-        throw new Error('1行目には高さと幅を数値で入力してください。');
+        throw new Error(
+          '高さと幅の指定が正しくありません。入力の1行目に、2つの正の整数をスペース区切りで指定してください。例: 6 8'
+        );
       const gridLines = lines.slice(1);
-      if (gridLines.length !== h) throw new Error(`行数が一致しません。`);
-      const newGrid = gridLines.map((line) => line.split(''));
-      setHeight(h.toString());
-      setWidth(w.toString());
+      if (gridLines.length !== h)
+        throw new Error(`入力で指定された高さ(${h})と、実際のグリッドの行数(${gridLines.length})が異なります。`);
+      const newGrid: string[][] = gridLines.map((line, rIdx) => {
+        if (line.length !== w)
+          throw new Error(
+            `グリッドの${rIdx + 1}行目の文字数(${line.length})が、入力で指定された幅(${w})と一致しません。`
+          );
+        return line.split('');
+      });
+      const newHeight = h.toString();
+      const newWidth = w.toString();
+      setHeight(newHeight);
+      setWidth(newWidth);
       setGrid(newGrid);
-      pushToHistory(newGrid, h.toString(), w.toString());
+      pushToHistory(newGrid, newHeight, newWidth);
       setSnackbarMessage('グリッドを読み込みました！');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
@@ -271,6 +282,11 @@ export default function GridEditor() {
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
+  };
+
+  const handleSnackbarClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') return;
+    setSnackbarOpen(false);
   };
 
   return (
@@ -385,8 +401,16 @@ export default function GridEditor() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
-        <Alert severity={snackbarSeverity} sx={{ width: '100%' }}>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          severity={snackbarSeverity}
+          sx={{ width: '100%' }}
+        >
           {snackbarMessage}
         </Alert>
       </Snackbar>

@@ -72,9 +72,11 @@ export const encodeGrid = (grid: GridType): string => {
   return btoa(data).replace(/\+/g, '-').replace(/\//g, '_');
 };
 
-export const decodeGrid = (h: number, w: number, encodedData: string): GridType => {
+export const decodeGrid = (h: number, w: number, encodedData: string): GridType | null => {
   const data = encodedData.replace(/-/g, '+').replace(/_/g, '/');
   const decodedData = atob(data);
+  if (decodedData.length !== h * w) return null;
+
   const newGrid: GridType = [];
   for (let i = 0; i < h; i++) {
     newGrid.push(decodedData.substring(i * w, (i + 1) * w).split(''));

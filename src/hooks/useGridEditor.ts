@@ -31,7 +31,7 @@ const getInitialState = () => {
 
       if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0) {
         const newGrid = decodeGrid(newHeight, newWidth, encodedData);
-        if (newGrid.length === newHeight && newGrid[0].length === newWidth) {
+        if (newGrid) {
           return {
             height: h,
             width: w,

@@ -26,10 +26,10 @@ export const GridDisplay: React.FC<GridDisplayProps> = ({
     >
       <Grid container spacing={0} direction="column" sx={{ cursor: 'cell', width: 'fit-content' }}>
         {grid.map((row, rowIndex) => (
-          <Grid key={rowIndex} item>
+          <Grid key={rowIndex}>
             <Grid container spacing={0} sx={{ flexWrap: 'nowrap' }}>
               {row.map((cell, colIndex) => (
-                <Grid key={`${rowIndex}-${colIndex}`} item>
+                <Grid key={`${rowIndex}-${colIndex}`}>
                   <Box
                     data-row={rowIndex}
                     data-col={colIndex}
