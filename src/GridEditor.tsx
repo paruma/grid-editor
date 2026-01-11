@@ -25,11 +25,17 @@ type Cell = { row: number; col: number };
 
 export default function GridEditor() {
   const {
-    grid, setGrid,
-    height, setHeight,
-    width, setWidth,
-    currentHistoryIndex, history,
-    pushToHistory, undo, redo
+    grid,
+    setGrid,
+    height,
+    setHeight,
+    width,
+    setWidth,
+    currentHistoryIndex,
+    history,
+    pushToHistory,
+    undo,
+    redo,
   } = useGridEditor();
 
   const [selectedChar, setSelectedChar] = useState('#');
@@ -55,7 +61,10 @@ export default function GridEditor() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+      if (
+        (e.target as HTMLElement).tagName === 'INPUT' ||
+        (e.target as HTMLElement).tagName === 'TEXTAREA'
+      ) {
         return;
       }
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
@@ -86,8 +95,12 @@ export default function GridEditor() {
 
   useEffect(() => {
     const handleCopy = (event: ClipboardEvent) => {
-      if ((event.target as HTMLElement).tagName !== 'INPUT' && (event.target as HTMLElement).tagName !== 'TEXTAREA') {
-        const atcoderFormat = `${height} ${width}\n` + grid.map(row => row.join('')).join('\n') + '\n';
+      if (
+        (event.target as HTMLElement).tagName !== 'INPUT' &&
+        (event.target as HTMLElement).tagName !== 'TEXTAREA'
+      ) {
+        const atcoderFormat =
+          `${height} ${width}\n` + grid.map((row) => row.join('')).join('\n') + '\n';
         event.clipboardData!.setData('text/plain', atcoderFormat);
         event.preventDefault();
         setSnackbarMessage('コピーしました！');
@@ -133,12 +146,19 @@ export default function GridEditor() {
   };
 
   const blurInputs = () => {
-    if (document.activeElement === heightInputRef.current || document.activeElement === widthInputRef.current) {
+    if (
+      document.activeElement === heightInputRef.current ||
+      document.activeElement === widthInputRef.current
+    ) {
       (document.activeElement as HTMLElement).blur();
     }
   };
 
-  const handleMouseDown = (rowIndex: number, colIndex: number, e: React.MouseEvent<HTMLElement>) => {
+  const handleMouseDown = (
+    rowIndex: number,
+    colIndex: number,
+    e: React.MouseEvent<HTMLElement>
+  ) => {
     blurInputs();
     e.preventDefault();
     setIsDrawing(true);
@@ -146,23 +166,23 @@ export default function GridEditor() {
     setLastDrawnCell({ row: rowIndex, col: colIndex });
     const charToSet = e.button === 2 ? '.' : selectedChar;
     const newGrid = grid.map((row, rIdx) =>
-      row.map((cell, cIdx) =>
-        (rIdx === rowIndex && cIdx === colIndex) ? charToSet : cell
-      )
+      row.map((cell, cIdx) => (rIdx === rowIndex && cIdx === colIndex ? charToSet : cell))
     );
     setGrid(newGrid);
   };
 
-  const handleTouchStart = (rowIndex: number, colIndex: number, e: React.TouchEvent<HTMLElement>) => {
+  const handleTouchStart = (
+    rowIndex: number,
+    colIndex: number,
+    e: React.TouchEvent<HTMLElement>
+  ) => {
     blurInputs();
     e.preventDefault();
     setIsDrawing(true);
     setMouseButton(0);
     setLastDrawnCell({ row: rowIndex, col: colIndex });
     const newGrid = grid.map((row, rIdx) =>
-      row.map((cell, cIdx) =>
-        (rIdx === rowIndex && cIdx === colIndex) ? selectedChar : cell
-      )
+      row.map((cell, cIdx) => (rIdx === rowIndex && cIdx === colIndex ? selectedChar : cell))
     );
     setGrid(newGrid);
   };
@@ -170,7 +190,14 @@ export default function GridEditor() {
   const handleMouseEnter = (rowIndex: number, colIndex: number) => {
     if (!isDrawing || !lastDrawnCell) return;
     const charToSet = mouseButton === 2 ? '.' : selectedChar;
-    const newGrid = bresenhamLine(grid, lastDrawnCell.row, lastDrawnCell.col, rowIndex, colIndex, charToSet);
+    const newGrid = bresenhamLine(
+      grid,
+      lastDrawnCell.row,
+      lastDrawnCell.col,
+      rowIndex,
+      colIndex,
+      charToSet
+    );
     setGrid(newGrid);
     setLastDrawnCell({ row: rowIndex, col: colIndex });
   };
@@ -190,28 +217,31 @@ export default function GridEditor() {
   };
 
   const handleCopyClick = () => {
-    const textToCopy = `${height} ${width}\n${grid.map(row => row.join('')).join('\n')}\n`;
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      setSnackbarMessage('コピーしました！');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-    }).catch(err => {
-      console.error('コピーに失敗しました: ', err);
-      setSnackbarMessage('コピーに失敗しました。');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    });
+    const textToCopy = `${height} ${width}\n${grid.map((row) => row.join('')).join('\n')}\n`;
+    navigator.clipboard
+      .writeText(textToCopy)
+      .then(() => {
+        setSnackbarMessage('コピーしました！');
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+      })
+      .catch((err) => {
+        console.error('コピーに失敗しました: ', err);
+        setSnackbarMessage('コピーに失敗しました。');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      });
   };
 
   const handleShareToXClick = () => {
-    const gridData = grid.map(row => row.join('')).join('');
+    const gridData = grid.map((row) => row.join('')).join('');
     const encodedData = btoa(gridData).replace(/\+/g, '-').replace(/\//g, '_');
     const params = new URLSearchParams();
     params.set('h', height);
     params.set('w', width);
     params.set('data', encodedData);
     const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
-    const text = "Grid Editor でグリッドを作ったよ！";
+    const text = 'Grid Editor でグリッドを作ったよ！';
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&hashtags=GridEditor`;
     window.open(tweetUrl, '_blank');
   };
@@ -223,10 +253,11 @@ export default function GridEditor() {
       const [hStr, wStr] = lines[0].split(' ');
       const h = parseInt(hStr, 10);
       const w = parseInt(wStr, 10);
-      if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) throw new Error('1行目には高さと幅を数値で入力してください。');
+      if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0)
+        throw new Error('1行目には高さと幅を数値で入力してください。');
       const gridLines = lines.slice(1);
       if (gridLines.length !== h) throw new Error(`行数が一致しません。`);
-      const newGrid = gridLines.map(line => line.split(''));
+      const newGrid = gridLines.map((line) => line.split(''));
       setHeight(h.toString());
       setWidth(w.toString());
       setGrid(newGrid);
@@ -234,8 +265,9 @@ export default function GridEditor() {
       setSnackbarMessage('グリッドを読み込みました！');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-    } catch (error: any) {
-      setSnackbarMessage(`エラー: ${error.message}`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '予期せぬエラーが発生しました';
+      setSnackbarMessage(`エラー: ${message}`);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
@@ -243,20 +275,37 @@ export default function GridEditor() {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom>グリッドエディタ</Typography>
+      <Typography variant="h4" gutterBottom>
+        グリッドエディタ
+      </Typography>
 
       <GridControls
-        height={height} setHeight={setHeight} width={width} setWidth={setWidth}
-        onGenerate={handleGenerateGrid} onClear={handleClearGrid} onRotate={handleRotate}
-        onUndo={undo} onRedo={redo} canUndo={currentHistoryIndex > 0} canRedo={currentHistoryIndex < history.length - 1}
+        height={height}
+        setHeight={setHeight}
+        width={width}
+        setWidth={setWidth}
+        onGenerate={handleGenerateGrid}
+        onClear={handleClearGrid}
+        onRotate={handleRotate}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={currentHistoryIndex > 0}
+        canRedo={currentHistoryIndex < history.length - 1}
         onHelpOpen={() => setHelpOpen(true)}
-        heightInputRef={heightInputRef} widthInputRef={widthInputRef}
+        heightInputRef={heightInputRef}
+        widthInputRef={widthInputRef}
       />
 
       <Stack direction="row" spacing={2} mb={2} alignItems="center">
         <Typography variant="subtitle1">選択中の文字:</Typography>
         <Tooltip title="描画する文字を変更します。キーボードの1文字キーでも変更できます。">
-          <TextField value={selectedChar} onChange={(e) => setSelectedChar(e.target.value.slice(0, 1))} size="small" sx={{ width: 50 }} inputProps={{ maxLength: 1 }} />
+          <TextField
+            value={selectedChar}
+            onChange={(e) => setSelectedChar(e.target.value.slice(0, 1))}
+            size="small"
+            sx={{ width: 50 }}
+            inputProps={{ maxLength: 1 }}
+          />
         </Tooltip>
       </Stack>
 
@@ -270,33 +319,64 @@ export default function GridEditor() {
       />
 
       <GridImportExport
-        height={height} width={width} grid={grid}
-        loadInput={loadInput} setLoadInput={setLoadInput}
-        onCopyClick={handleCopyClick} onLoadGrid={handleLoadGridInput} onShareToX={handleShareToXClick}
+        height={height}
+        width={width}
+        grid={grid}
+        loadInput={loadInput}
+        setLoadInput={setLoadInput}
+        onCopyClick={handleCopyClick}
+        onLoadGrid={handleLoadGridInput}
+        onShareToX={handleShareToXClick}
       />
 
       <Dialog open={helpOpen} onClose={() => setHelpOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>グリッドエディタの使い方</DialogTitle>
         <DialogContent>
           <DialogContentText component="div">
-            <Typography variant="h6" gutterBottom>マウス操作</Typography>
+            <Typography variant="h6" gutterBottom>
+              マウス操作
+            </Typography>
             <ul>
-              <li><b>左クリック/ドラッグ:</b> 選択中の文字でグリッドを描画します。</li>
-              <li><b>右クリック/ドラッグ:</b> グリッドを「.」で消去します。</li>
+              <li>
+                <b>左クリック/ドラッグ:</b> 選択中の文字でグリッドを描画します。
+              </li>
+              <li>
+                <b>右クリック/ドラッグ:</b> グリッドを「.」で消去します。
+              </li>
             </ul>
-            <Typography variant="h6" gutterBottom>キーボードショートカット</Typography>
+            <Typography variant="h6" gutterBottom>
+              キーボードショートカット
+            </Typography>
             <ul>
-              <li><b>Ctrl/Cmd + Z:</b> 操作を元に戻します (Undo)。</li>
-              <li><b>Ctrl/Cmd + Y:</b> 操作をやり直します (Redo)。</li>
-              <li><b>Ctrl/Cmd + C:</b> 表示されている競プロ形式のテキストをコピーします。</li>
-              <li><b>任意の1文字キー:</b> 選択中の文字（描画に使う文字）を変更します。</li>
+              <li>
+                <b>Ctrl/Cmd + Z:</b> 操作を元に戻します (Undo)。
+              </li>
+              <li>
+                <b>Ctrl/Cmd + Y:</b> 操作をやり直します (Redo)。
+              </li>
+              <li>
+                <b>Ctrl/Cmd + C:</b> 表示されている競プロ形式のテキストをコピーします。
+              </li>
+              <li>
+                <b>任意の1文字キー:</b> 選択中の文字（描画に使う文字）を変更します。
+              </li>
             </ul>
-            <Typography variant="h6" gutterBottom>その他</Typography>
+            <Typography variant="h6" gutterBottom>
+              その他
+            </Typography>
             <ul>
-              <li><b>サイズ設定:</b> 指定した高さと幅でグリッドをリサイズします。</li>
-              <li><b>クリア:</b> グリッド全体を「.」で埋めます。</li>
-              <li><b>回転:</b> グリッド全体を時計回りに90度回転します。</li>
-              <li><b>読み込み:</b> テキストエリアの入力からグリッドを生成します。</li>
+              <li>
+                <b>サイズ設定:</b> 指定した高さと幅でグリッドをリサイズします。
+              </li>
+              <li>
+                <b>クリア:</b> グリッド全体を「.」で埋めます。
+              </li>
+              <li>
+                <b>回転:</b> グリッド全体を時計回りに90度回転します。
+              </li>
+              <li>
+                <b>読み込み:</b> テキストエリアの入力からグリッドを生成します。
+              </li>
             </ul>
           </DialogContentText>
         </DialogContent>

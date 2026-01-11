@@ -11,10 +11,19 @@ interface GridDisplayProps {
 }
 
 export const GridDisplay: React.FC<GridDisplayProps> = ({
-  grid, onMouseDown, onMouseEnter, onTouchStart, onTouchMove, onContextMenu
+  grid,
+  onMouseDown,
+  onMouseEnter,
+  onTouchStart,
+  onTouchMove,
+  onContextMenu,
 }) => {
   return (
-    <Box onContextMenu={onContextMenu} onTouchMove={onTouchMove} sx={{ touchAction: 'none', overflowX: 'auto' }}>
+    <Box
+      onContextMenu={onContextMenu}
+      onTouchMove={onTouchMove}
+      sx={{ touchAction: 'none', overflowX: 'auto' }}
+    >
       <Grid container spacing={0} direction="column" sx={{ cursor: 'cell', width: 'fit-content' }}>
         {grid.map((row, rowIndex) => (
           <Grid key={rowIndex} item>
@@ -25,9 +34,15 @@ export const GridDisplay: React.FC<GridDisplayProps> = ({
                     data-row={rowIndex}
                     data-col={colIndex}
                     sx={{
-                      width: 24, height: 24, border: '1px solid #eee', display: 'flex',
-                      justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem',
-                      fontWeight: 'bold', userSelect: 'none',
+                      width: 24,
+                      height: 24,
+                      border: '1px solid #eee',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      fontSize: '0.8rem',
+                      fontWeight: 'bold',
+                      userSelect: 'none',
                       backgroundColor: cell === '#' ? '#e0e0e0' : '#ffffff',
                     }}
                     onMouseDown={(e) => onMouseDown(rowIndex, colIndex, e)}

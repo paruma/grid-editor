@@ -24,37 +24,86 @@ interface GridControlsProps {
 }
 
 export const GridControls: React.FC<GridControlsProps> = ({
-  height, setHeight, width, setWidth, onGenerate, onClear, onRotate, onUndo, onRedo, canUndo, canRedo, onHelpOpen, heightInputRef, widthInputRef
+  height,
+  setHeight,
+  width,
+  setWidth,
+  onGenerate,
+  onClear,
+  onRotate,
+  onUndo,
+  onRedo,
+  canUndo,
+  canRedo,
+  onHelpOpen,
+  heightInputRef,
+  widthInputRef,
 }) => {
   return (
     <Stack direction="row" spacing={1} mb={2} alignItems="center">
       <Tooltip title="グリッドの高さを設定します">
-        <TextField label="高さ (h)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onGenerate()} size="small" sx={{flexShrink: 0}} inputRef={heightInputRef}/>
+        <TextField
+          label="高さ (h)"
+          type="number"
+          value={height}
+          onChange={(e) => setHeight(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onGenerate()}
+          size="small"
+          sx={{ flexShrink: 0 }}
+          inputRef={heightInputRef}
+        />
       </Tooltip>
       <Tooltip title="グリッドの幅を設定します">
-        <TextField label="幅 (w)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && onGenerate()} size="small" sx={{flexShrink: 0}} inputRef={widthInputRef}/>
+        <TextField
+          label="幅 (w)"
+          type="number"
+          value={width}
+          onChange={(e) => setWidth(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && onGenerate()}
+          size="small"
+          sx={{ flexShrink: 0 }}
+          inputRef={widthInputRef}
+        />
       </Tooltip>
       <Tooltip title="グリッドを現在の高さと幅にリサイズします">
-        <Button variant="contained" onClick={onGenerate} sx={{flexShrink: 0}}>サイズ設定</Button>
+        <Button variant="contained" onClick={onGenerate} sx={{ flexShrink: 0 }}>
+          サイズ設定
+        </Button>
       </Tooltip>
       <Tooltip title="グリッドの内容をすべて '.' にリセットします">
-        <Button variant="outlined" onClick={onClear} sx={{flexShrink: 0}}>クリア</Button>
+        <Button variant="outlined" onClick={onClear} sx={{ flexShrink: 0 }}>
+          クリア
+        </Button>
       </Tooltip>
       <Tooltip title="グリッドを時計回りに90度回転します">
-        <IconButton onClick={onRotate}><Rotate90DegreesCwIcon /></IconButton>
+        <IconButton onClick={onRotate}>
+          <Rotate90DegreesCwIcon />
+        </IconButton>
       </Tooltip>
-      <Box sx={{flexGrow: 1}} />
+      <Box sx={{ flexGrow: 1 }} />
       <Tooltip title="元に戻す (Ctrl+Z)">
-        <IconButton onClick={onUndo} disabled={!canUndo}><UndoIcon /></IconButton>
+        <IconButton onClick={onUndo} disabled={!canUndo}>
+          <UndoIcon />
+        </IconButton>
       </Tooltip>
       <Tooltip title="やり直す (Ctrl+Y)">
-        <IconButton onClick={onRedo} disabled={!canRedo}><RedoIcon /></IconButton>
+        <IconButton onClick={onRedo} disabled={!canRedo}>
+          <RedoIcon />
+        </IconButton>
       </Tooltip>
       <Tooltip title="ヘルプを表示します">
-        <IconButton onClick={onHelpOpen}><HelpOutlineIcon /></IconButton>
+        <IconButton onClick={onHelpOpen}>
+          <HelpOutlineIcon />
+        </IconButton>
       </Tooltip>
       <Tooltip title="GitHubリポジトリを見る">
-        <IconButton href="https://github.com/paruma/grid-editor" target="_blank" rel="noopener noreferrer"><GitHubIcon /></IconButton>
+        <IconButton
+          href="https://github.com/paruma/grid-editor"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <GitHubIcon />
+        </IconButton>
       </Tooltip>
     </Stack>
   );
