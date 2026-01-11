@@ -1,52 +1,36 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Container,
   Typography,
-  TextField,
-  Button,
-  Box,
-  Grid,
   Stack,
   Snackbar,
   Alert,
-  IconButton,
   Tooltip,
+  TextField,
   Dialog,
-  DialogActions,
+  DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogTitle,
+  DialogActions,
+  Button,
   AlertColor,
 } from '@mui/material';
-import UndoIcon from '@mui/icons-material/Undo';
-import RedoIcon from '@mui/icons-material/Redo';
-import Rotate90DegreesCwIcon from '@mui/icons-material/Rotate90DegreesCw';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import GitHubIcon from '@mui/icons-material/GitHub';
-import XIcon from '@mui/icons-material/X';
+import { useGridEditor } from './hooks/useGridEditor';
+import { GridControls } from './components/GridEditor/GridControls';
+import { GridDisplay } from './components/GridEditor/GridDisplay';
+import { GridImportExport } from './components/GridEditor/GridImportExport';
+import { generateInitialGrid, bresenhamLine, rotateGrid } from './utils/gridUtils';
 
-const MAX_HISTORY_COUNT = 100;
-
-type GridType = string[][];
-type HistoryState = {
-  grid: GridType;
-  height: string;
-  width: string;
-};
-type Cell = {
-  row: number;
-  col: number;
-};
+type Cell = { row: number; col: number };
 
 export default function GridEditor() {
-  const [height, setHeight] = useState('6');
-  const [width, setWidth] = useState('8');
-  const [grid, setGrid] = useState<GridType>(() => {
-    const initialHeight = parseInt('6', 10);
-    const initialWidth = parseInt('8', 10);
-    return Array(initialHeight).fill(null).map(() => Array(initialWidth).fill('.'));
-  });
+  const {
+    grid, setGrid,
+    height, setHeight,
+    width, setWidth,
+    currentHistoryIndex, history,
+    pushToHistory, undo, redo
+  } = useGridEditor();
 
   const [selectedChar, setSelectedChar] = useState('#');
   const [isDrawing, setIsDrawing] = useState(false);
@@ -59,87 +43,6 @@ export default function GridEditor() {
   const [helpOpen, setHelpOpen] = useState(false);
   const heightInputRef = useRef<HTMLInputElement>(null);
   const widthInputRef = useRef<HTMLInputElement>(null);
-
-  const [history, setHistory] = useState<HistoryState[]>([{ grid, height, width }]);
-  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
-
-  const pushToHistory = useCallback((newGrid: GridType, newHeight: string, newWidth: string) => {
-    const newState = { grid: newGrid, height: newHeight, width: newWidth };
-    const currentSate = history[currentHistoryIndex];
-
-    if (JSON.stringify(newState) === JSON.stringify(currentSate)) {
-      return;
-    }
-
-    let newHistory = history.slice(0, currentHistoryIndex + 1);
-    newHistory.push(newState);
-
-    if (newHistory.length > MAX_HISTORY_COUNT) {
-      newHistory = newHistory.slice(newHistory.length - MAX_HISTORY_COUNT);
-    }
-
-    const newIndex = newHistory.length - 1;
-
-    setHistory(newHistory);
-    setCurrentHistoryIndex(newIndex);
-  }, [history, currentHistoryIndex]);
-
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const h = params.get('h');
-      const w = params.get('w');
-      const encodedData = params.get('data');
-
-      if (h && w && encodedData) {
-        const newHeight = parseInt(h, 10);
-        const newWidth = parseInt(w, 10);
-
-        let data = encodedData.replace(/-/g, '+').replace(/_/g, '/');
-        const decodedData = atob(data);
-
-        if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0 && decodedData.length === newHeight * newWidth) {
-          const newGrid: GridType = [];
-          for (let i = 0; i < newHeight; i++) {
-            newGrid.push(decodedData.substring(i * newWidth, (i + 1) * newWidth).split(''));
-          }
-          
-          setHeight(h);
-          setWidth(w);
-          setGrid(newGrid);
-
-          const initialState = { grid: newGrid, height: h, width: w };
-          setHistory([initialState]);
-          setCurrentHistoryIndex(0);
-        }
-      }
-    } catch (error: any) {
-      console.error("Failed to decode grid data from URL:", error);
-      // エラーが発生した場合は、デフォルトのグリッドでアプリケーションを初期化します。
-    }
-  }, []);
-
-  const handleUndo = useCallback(() => {
-    if (currentHistoryIndex > 0) {
-      const newIndex = currentHistoryIndex - 1;
-      setCurrentHistoryIndex(newIndex);
-      const previousState = history[newIndex];
-      setGrid(previousState.grid);
-      setHeight(previousState.height);
-      setWidth(previousState.width);
-    }
-  }, [currentHistoryIndex, history]);
-
-  const handleRedo = useCallback(() => {
-    if (currentHistoryIndex < history.length - 1) {
-      const newIndex = currentHistoryIndex + 1;
-      setCurrentHistoryIndex(newIndex);
-      const nextState = history[newIndex];
-      setGrid(nextState.grid);
-      setHeight(nextState.height);
-      setWidth(nextState.width);
-    }
-  }, [currentHistoryIndex, history]);
 
   const handleDrawingEnd = useCallback(() => {
     if (isDrawing) {
@@ -161,10 +64,10 @@ export default function GridEditor() {
 
       if (isUndo) {
         e.preventDefault();
-        handleUndo();
+        undo();
       } else if (isRedo) {
         e.preventDefault();
-        handleRedo();
+        redo();
       } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
         setSelectedChar(e.key);
       }
@@ -179,7 +82,7 @@ export default function GridEditor() {
       window.removeEventListener('mouseup', handleDrawingEnd);
       window.removeEventListener('touchend', handleDrawingEnd);
     };
-  }, [handleUndo, handleRedo, handleDrawingEnd]);
+  }, [undo, redo, handleDrawingEnd]);
 
   useEffect(() => {
     const handleCopy = (event: ClipboardEvent) => {
@@ -206,15 +109,7 @@ export default function GridEditor() {
       alert('高さと幅は正の整数で入力してください。');
       return;
     }
-    const newGrid: GridType = Array(h).fill(null).map((_, rIdx) =>
-      Array(w).fill(null).map((_, cIdx) => {
-        if (rIdx < grid.length && cIdx < (grid[0]?.length || 0)) {
-          return grid[rIdx][cIdx];
-        } else {
-          return '.';
-        }
-      })
-    );
+    const newGrid = generateInitialGrid(h, w, grid);
     setGrid(newGrid);
     pushToHistory(newGrid, height, width);
   };
@@ -222,38 +117,29 @@ export default function GridEditor() {
   const handleClearGrid = () => {
     const h = parseInt(height, 10);
     const w = parseInt(width, 10);
-    const newGrid: GridType = Array(h).fill(null).map(() => Array(w).fill('.'));
+    const newGrid = generateInitialGrid(h, w);
     setGrid(newGrid);
     pushToHistory(newGrid, height, width);
   };
 
   const handleRotate = () => {
-    const currentHeight = parseInt(height, 10);
-    const currentWidth = parseInt(width, 10);
-    const newHeight = currentWidth;
-    const newWidth = currentHeight;
-
-    const newGrid: GridType = Array(newHeight).fill(null).map(() => Array(newWidth).fill('.'));
-
-    for (let r = 0; r < currentHeight; r++) {
-      for (let c = 0; c < currentWidth; c++) {
-        newGrid[c][newWidth - 1 - r] = grid[r][c];
-      }
-    }
-
-    const newHeightStr = newHeight.toString();
-    const newWidthStr = newWidth.toString();
-
+    const { grid: newGrid, h: newH, w: newW } = rotateGrid(grid);
+    const newHeightStr = newH.toString();
+    const newWidthStr = newW.toString();
     setHeight(newHeightStr);
     setWidth(newWidthStr);
     setGrid(newGrid);
     pushToHistory(newGrid, newHeightStr, newWidthStr);
   };
 
-  const handleMouseDown = (rowIndex: number, colIndex: number, e: React.MouseEvent<HTMLElement>) => {
+  const blurInputs = () => {
     if (document.activeElement === heightInputRef.current || document.activeElement === widthInputRef.current) {
       (document.activeElement as HTMLElement).blur();
     }
+  };
+
+  const handleMouseDown = (rowIndex: number, colIndex: number, e: React.MouseEvent<HTMLElement>) => {
+    blurInputs();
     e.preventDefault();
     setIsDrawing(true);
     setMouseButton(e.button);
@@ -268,12 +154,10 @@ export default function GridEditor() {
   };
 
   const handleTouchStart = (rowIndex: number, colIndex: number, e: React.TouchEvent<HTMLElement>) => {
-    if (document.activeElement === heightInputRef.current || document.activeElement === widthInputRef.current) {
-      (document.activeElement as HTMLElement).blur();
-    }
+    blurInputs();
     e.preventDefault();
     setIsDrawing(true);
-    setMouseButton(0); // Treat all touches as left-click
+    setMouseButton(0);
     setLastDrawnCell({ row: rowIndex, col: colIndex });
     const newGrid = grid.map((row, rIdx) =>
       row.map((cell, cIdx) =>
@@ -283,55 +167,27 @@ export default function GridEditor() {
     setGrid(newGrid);
   };
 
+  const handleMouseEnter = (rowIndex: number, colIndex: number) => {
+    if (!isDrawing || !lastDrawnCell) return;
+    const charToSet = mouseButton === 2 ? '.' : selectedChar;
+    const newGrid = bresenhamLine(grid, lastDrawnCell.row, lastDrawnCell.col, rowIndex, colIndex, charToSet);
+    setGrid(newGrid);
+    setLastDrawnCell({ row: rowIndex, col: colIndex });
+  };
+
   const handleTouchMove = (e: React.TouchEvent<HTMLElement>) => {
     e.preventDefault();
     if (!isDrawing) return;
-
     const touch = e.touches[0];
     const element = document.elementFromPoint(touch.clientX, touch.clientY);
     if (element) {
       const rowIndex = parseInt(element.getAttribute('data-row') || '-1', 10);
       const colIndex = parseInt(element.getAttribute('data-col') || '-1', 10);
-
       if (rowIndex !== -1 && colIndex !== -1) {
         handleMouseEnter(rowIndex, colIndex);
       }
     }
   };
-
-  const handleMouseEnter = (rowIndex: number, colIndex: number) => {
-    if (!isDrawing || !lastDrawnCell) return;
-
-    const startRow = lastDrawnCell.row;
-    const startCol = lastDrawnCell.col;
-    const endRow = rowIndex;
-    const endCol = colIndex;
-    const charToSet = mouseButton === 2 ? '.' : selectedChar;
-
-    const newGrid = grid.map(r => [...r]);
-    const dx = Math.abs(endCol - startCol);
-    const dy = Math.abs(endRow - startRow);
-    const sx = (startCol < endCol) ? 1 : -1;
-    const sy = (startRow < endRow) ? 1 : -1;
-    let err = dx - dy;
-    let x = startCol;
-    let y = startRow;
-
-    while (true) {
-      if (y >= 0 && y < newGrid.length && x >= 0 && x < newGrid[0].length) {
-        newGrid[y][x] = charToSet;
-      }
-      if (x === endCol && y === endRow) break;
-      const e2 = 2 * err;
-      if (e2 > -dy) { err -= dy; x += sx; }
-      if (e2 < dx) { err += dx; y += sy; }
-    }
-
-    setGrid(newGrid);
-    setLastDrawnCell({ row: rowIndex, col: colIndex });
-  };
-
-  const handleContextMenu = (e: React.MouseEvent<HTMLElement>) => e.preventDefault();
 
   const handleCopyClick = () => {
     const textToCopy = `${height} ${width}\n${grid.map(row => row.join('')).join('\n')}\n`;
@@ -350,21 +206,14 @@ export default function GridEditor() {
   const handleShareToXClick = () => {
     const gridData = grid.map(row => row.join('')).join('');
     const encodedData = btoa(gridData).replace(/\+/g, '-').replace(/\//g, '_');
-
     const params = new URLSearchParams();
     params.set('h', height);
     params.set('w', width);
     params.set('data', encodedData);
-
     const shareUrl = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     const text = "Grid Editor でグリッドを作ったよ！";
     const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}&hashtags=GridEditor`;
     window.open(tweetUrl, '_blank');
-  };
-
-  const handleSnackbarClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') return;
-    setSnackbarOpen(false);
   };
 
   const handleLoadGridInput = () => {
@@ -374,19 +223,14 @@ export default function GridEditor() {
       const [hStr, wStr] = lines[0].split(' ');
       const h = parseInt(hStr, 10);
       const w = parseInt(wStr, 10);
-      if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) throw new Error('高さと幅の指定が正しくありません。入力の1行目に、2つの正の整数をスペース区切りで指定してください。例: 6 8');
+      if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) throw new Error('1行目には高さと幅を数値で入力してください。');
       const gridLines = lines.slice(1);
-      if (gridLines.length !== h) throw new Error(`入力で指定された高さ(${h})と、実際のグリッドの行数(${gridLines.length})が異なります。`);
-      const newGrid: GridType = gridLines.map((line, rIdx) => {
-        if (line.length !== w) throw new Error(`グリッドの${rIdx + 1}行目の文字数(${line.length})が、入力で指定された幅(${w})と一致しません。`);
-        return line.split('');
-      });
-      const newHeight = h.toString();
-      const newWidth = w.toString();
-      setHeight(newHeight);
-      setWidth(newWidth);
+      if (gridLines.length !== h) throw new Error(`行数が一致しません。`);
+      const newGrid = gridLines.map(line => line.split(''));
+      setHeight(h.toString());
+      setWidth(w.toString());
       setGrid(newGrid);
-      pushToHistory(newGrid, newHeight, newWidth);
+      pushToHistory(newGrid, h.toString(), w.toString());
       setSnackbarMessage('グリッドを読み込みました！');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
@@ -401,36 +245,13 @@ export default function GridEditor() {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom>グリッドエディタ</Typography>
 
-      <Stack direction="row" spacing={1} mb={2} alignItems="center">
-        <Tooltip title="グリッドの高さを設定します">
-          <TextField label="高さ (h)" type="number" value={height} onChange={(e) => setHeight(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}} inputRef={heightInputRef}/>
-        </Tooltip>
-        <Tooltip title="グリッドの幅を設定します">
-          <TextField label="幅 (w)" type="number" value={width} onChange={(e) => setWidth(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleGenerateGrid()} size="small" sx={{flexShrink: 0}} inputRef={widthInputRef}/>
-        </Tooltip>
-        <Tooltip title="グリッドを現在の高さと幅にリサイズします">
-          <Button variant="contained" onClick={handleGenerateGrid} sx={{flexShrink: 0}}>サイズ設定</Button>
-        </Tooltip>
-        <Tooltip title="グリッドの内容をすべて '.' にリセットします">
-          <Button variant="outlined" onClick={handleClearGrid} sx={{flexShrink: 0}}>クリア</Button>
-        </Tooltip>
-        <Tooltip title="グリッドを時計回りに90度回転します">
-          <IconButton onClick={handleRotate}><Rotate90DegreesCwIcon /></IconButton>
-        </Tooltip>
-        <Box sx={{flexGrow: 1}} />
-        <Tooltip title="元に戻す (Ctrl+Z)">
-          <IconButton onClick={handleUndo} disabled={currentHistoryIndex <= 0}><UndoIcon /></IconButton>
-        </Tooltip>
-        <Tooltip title="やり直す (Ctrl+Y)">
-          <IconButton onClick={handleRedo} disabled={currentHistoryIndex >= history.length - 1}><RedoIcon /></IconButton>
-        </Tooltip>
-        <Tooltip title="ヘルプを表示します">
-          <IconButton onClick={() => setHelpOpen(true)}><HelpOutlineIcon /></IconButton>
-        </Tooltip>
-        <Tooltip title="GitHubリポジトリを見る">
-          <IconButton href="https://github.com/paruma/grid-editor" target="_blank" rel="noopener noreferrer"><GitHubIcon /></IconButton>
-        </Tooltip>
-      </Stack>
+      <GridControls
+        height={height} setHeight={setHeight} width={width} setWidth={setWidth}
+        onGenerate={handleGenerateGrid} onClear={handleClearGrid} onRotate={handleRotate}
+        onUndo={undo} onRedo={redo} canUndo={currentHistoryIndex > 0} canRedo={currentHistoryIndex < history.length - 1}
+        onHelpOpen={() => setHelpOpen(true)}
+        heightInputRef={heightInputRef} widthInputRef={widthInputRef}
+      />
 
       <Stack direction="row" spacing={2} mb={2} alignItems="center">
         <Typography variant="subtitle1">選択中の文字:</Typography>
@@ -439,62 +260,20 @@ export default function GridEditor() {
         </Tooltip>
       </Stack>
 
-      <Box onContextMenu={handleContextMenu} onTouchMove={handleTouchMove} sx={{ touchAction: 'none', overflowX: 'auto' }}>
-        <Grid container spacing={0} direction="column" sx={{ cursor: 'cell', width: 'fit-content' }}>
-          {grid.map((row, rowIndex) => (
-            <Grid key={rowIndex}>
-              <Grid container spacing={0} sx={{ flexWrap: 'nowrap' }}>
-                {row.map((cell, colIndex) => (
-                  <Grid key={`${rowIndex}-${colIndex}`}>
-                    <Box
-                      data-row={rowIndex}
-                      data-col={colIndex}
-                      sx={{
-                        width: 24, height: 24, border: '1px solid #eee', display: 'flex',
-                        justifyContent: 'center', alignItems: 'center', fontSize: '0.8rem',
-                        fontWeight: 'bold', userSelect: 'none',
-                        backgroundColor: cell === '#' ? '#e0e0e0' : '#ffffff',
-                      }}
-                      onMouseDown={(e) => handleMouseDown(rowIndex, colIndex, e)}
-                      onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
-                      onTouchStart={(e) => handleTouchStart(rowIndex, colIndex, e)}
-                    >
-                      {cell}
-                    </Box>
-                  </Grid>
-                ))}
-              </Grid>
-            </Grid>
-          ))}
-        </Grid>
-      </Box>
+      <GridDisplay
+        grid={grid}
+        onMouseDown={handleMouseDown}
+        onMouseEnter={handleMouseEnter}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onContextMenu={(e) => e.preventDefault()}
+      />
 
-      <Stack direction="row" spacing={2} mt={4} alignItems="center">
-        <Typography variant="h6" gutterBottom>競プロ入力形式:</Typography>
-        <Tooltip title="現在のグリッドを競プロ形式でクリップボードにコピーします (Ctrl+C)">
-          <Button variant="outlined" onClick={handleCopyClick}>コピー</Button>
-        </Tooltip>
-      </Stack>
-      <Box sx={{ border: '1px solid #ccc', p: 2, mb: 2, whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
-        {`${height} ${width}\n${grid.map(row => row.join('')).join('\n')}`}
-      </Box>
-      <Stack direction="column" spacing={2} mt={4}>
-        <Typography variant="h6" gutterBottom>競プロ入力形式から読み込み:</Typography>
-        <TextField
-          placeholder={`入力例:\n2 4\n####\n.#.#\n`}
-          multiline rows={4} fullWidth variant="outlined" value={loadInput}
-          onChange={(e) => setLoadInput(e.target.value)}
-          inputProps={{ style: { fontFamily: 'monospace' } }}
-        />
-        <Tooltip title="入力されたテキストを解釈してグリッドに反映します">
-          <Button variant="contained" onClick={handleLoadGridInput}>読み込み</Button>
-        </Tooltip>
-        <Stack direction="row" justifyContent="flex-end">
-          <Tooltip title="現在のグリッドをXでシェアします">
-            <IconButton onClick={handleShareToXClick}><XIcon /></IconButton>
-          </Tooltip>
-        </Stack>
-      </Stack>
+      <GridImportExport
+        height={height} width={width} grid={grid}
+        loadInput={loadInput} setLoadInput={setLoadInput}
+        onCopyClick={handleCopyClick} onLoadGrid={handleLoadGridInput} onShareToX={handleShareToXClick}
+      />
 
       <Dialog open={helpOpen} onClose={() => setHelpOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>グリッドエディタの使い方</DialogTitle>
@@ -526,8 +305,8 @@ export default function GridEditor() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleSnackbarClose}>
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
+      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={() => setSnackbarOpen(false)}>
+        <Alert severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
