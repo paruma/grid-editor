@@ -82,14 +82,18 @@ export const GridControls: React.FC<GridControlsProps> = ({
       </Tooltip>
       <Box sx={{ flexGrow: 1 }} />
       <Tooltip title="元に戻す (Ctrl+Z)">
-        <IconButton onClick={onUndo} disabled={!canUndo}>
-          <UndoIcon />
-        </IconButton>
+        <span>
+          <IconButton onClick={onUndo} disabled={!canUndo}>
+            <UndoIcon />
+          </IconButton>
+        </span>
       </Tooltip>
       <Tooltip title="やり直す (Ctrl+Y)">
-        <IconButton onClick={onRedo} disabled={!canRedo}>
-          <RedoIcon />
-        </IconButton>
+        <span>
+          <IconButton onClick={onRedo} disabled={!canRedo}>
+            <RedoIcon />
+          </IconButton>
+        </span>
       </Tooltip>
       <Tooltip title="ヘルプを表示します">
         <IconButton onClick={onHelpOpen}>
