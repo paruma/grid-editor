@@ -1,9 +1,5 @@
 import { useState, useCallback } from 'react';
-import {
-  GridType,
-  generateInitialGrid,
-  decodeGrid,
-} from '../utils/gridUtils';
+import { GridType, generateInitialGrid, decodeGrid } from '../utils/gridUtils';
 
 const MAX_HISTORY_COUNT = 100;
 

@@ -1,9 +1,4 @@
-import {
-  rotateGrid,
-  bresenhamLine,
-  encodeGrid,
-  decodeGrid,
-} from './gridUtils';
+import { rotateGrid, bresenhamLine, encodeGrid, decodeGrid } from './gridUtils';
 
 describe('gridUtils', () => {
   test('rotateGrid rotates 90 degrees clockwise', () => {

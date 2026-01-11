@@ -93,28 +93,6 @@ export default function GridEditor() {
     };
   }, [undo, redo, handleDrawingEnd]);
 
-  useEffect(() => {
-    const handleCopy = (event: ClipboardEvent) => {
-      if (
-        (event.target as HTMLElement).tagName !== 'INPUT' &&
-        (event.target as HTMLElement).tagName !== 'TEXTAREA'
-      ) {
-        const atcoderFormat =
-          `${height} ${width}\n` + grid.map((row) => row.join('')).join('\n') + '\n';
-        event.clipboardData!.setData('text/plain', atcoderFormat);
-        event.preventDefault();
-        setSnackbarMessage('コピーしました！');
-        setSnackbarSeverity('success');
-        setSnackbarOpen(true);
-      }
-    };
-
-    const listener = (e: Event) => handleCopy(e as ClipboardEvent);
-
-    window.addEventListener('copy', listener);
-    return () => window.removeEventListener('copy', listener);
-  }, [grid, height, width]);
-
   const handleGenerateGrid = () => {
     const h = parseInt(height, 10);
     const w = parseInt(width, 10);
@@ -259,7 +237,9 @@ export default function GridEditor() {
         );
       const gridLines = lines.slice(1);
       if (gridLines.length !== h)
-        throw new Error(`入力で指定された高さ(${h})と、実際のグリッドの行数(${gridLines.length})が異なります。`);
+        throw new Error(
+          `入力で指定された高さ(${h})と、実際のグリッドの行数(${gridLines.length})が異なります。`
+        );
       const newGrid: string[][] = gridLines.map((line, rIdx) => {
         if (line.length !== w)
           throw new Error(
@@ -371,9 +351,6 @@ export default function GridEditor() {
                 <b>Ctrl/Cmd + Y:</b> 操作をやり直します (Redo)。
               </li>
               <li>
-                <b>Ctrl/Cmd + C:</b> 表示されている競プロ形式のテキストをコピーします。
-              </li>
-              <li>
                 <b>任意の1文字キー:</b> 選択中の文字（描画に使う文字）を変更します。
               </li>
             </ul>
@@ -401,16 +378,8 @@ export default function GridEditor() {
         </DialogActions>
       </Dialog>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert
-          onClose={handleSnackbarClose}
-          severity={snackbarSeverity}
-          sx={{ width: '100%' }}
-        >
+      <Snackbar open={snackbarOpen} autoHideDuration={3000} onClose={handleSnackbarClose}>
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
           {snackbarMessage}
         </Alert>
       </Snackbar>
