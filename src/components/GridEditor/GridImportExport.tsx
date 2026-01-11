@@ -33,6 +33,7 @@ export const GridImportExport: React.FC<GridImportExportProps> = ({
   onShareToX,
 }) => {
   const commonHeight = 180;
+  const commonFontSize = '13px'; // モノスペースとして読みやすいサイズに固定
   const gridText = height + ' ' + width + '\n' + grid.map((row) => row.join('')).join('\n');
 
   return (
@@ -55,10 +56,12 @@ export const GridImportExport: React.FC<GridImportExportProps> = ({
               height: commonHeight,
               overflow: 'auto',
               whiteSpace: 'pre-wrap',
-              fontFamily: 'monospace',
+              fontFamily: '"Roboto Mono", "Courier New", monospace', // フォント候補を具体的に指定
+              fontSize: commonFontSize,
               backgroundColor: '#fafafa',
               borderRadius: 1,
               boxSizing: 'border-box',
+              lineHeight: 1.5,
             }}
           >
             {gridText}
@@ -85,11 +88,17 @@ export const GridImportExport: React.FC<GridImportExportProps> = ({
               '& .MuiInputBase-root': {
                 height: commonHeight,
                 alignItems: 'flex-start',
-                fontFamily: 'monospace',
+                padding: 0,
+                backgroundColor: '#ffffff',
               },
               '& .MuiInputBase-input': {
                 height: '100% !important',
                 overflow: 'auto !important',
+                padding: '16px !important',
+                boxSizing: 'border-box',
+                fontFamily: '"Roboto Mono", "Courier New", monospace', // フォントを一致させる
+                fontSize: commonFontSize,
+                lineHeight: 1.5,
               },
             }}
           />
