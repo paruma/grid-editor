@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import {
   GridType,
   generateInitialGrid,
@@ -13,12 +13,55 @@ export type HistoryState = {
   width: string;
 };
 
-export const useGridEditor = () => {
-  const [height, setHeight] = useState('6');
-  const [width, setWidth] = useState('8');
-  const [grid, setGrid] = useState<GridType>(() => generateInitialGrid(6, 8));
+// URLパラメータから初期状態を取得するユーティリティ
+const getInitialState = () => {
+  const defaultHeight = '6';
+  const defaultWidth = '8';
+  const defaultGrid = generateInitialGrid(6, 8);
 
-  const [history, setHistory] = useState<HistoryState[]>([{ grid, height, width }]);
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const h = params.get('h');
+    const w = params.get('w');
+    const encodedData = params.get('data');
+
+    if (h && w && encodedData) {
+      const newHeight = parseInt(h, 10);
+      const newWidth = parseInt(w, 10);
+
+      if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0) {
+        const newGrid = decodeGrid(newHeight, newWidth, encodedData);
+        if (newGrid.length === newHeight && newGrid[0].length === newWidth) {
+          return {
+            height: h,
+            width: w,
+            grid: newGrid,
+          };
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Failed to decode grid data from URL:', error);
+  }
+
+  return {
+    height: defaultHeight,
+    width: defaultWidth,
+    grid: defaultGrid,
+  };
+};
+
+export const useGridEditor = () => {
+  // 初期値を一度だけ計算
+  const [initialData] = useState(getInitialState);
+
+  const [height, setHeight] = useState(initialData.height);
+  const [width, setWidth] = useState(initialData.width);
+  const [grid, setGrid] = useState<GridType>(initialData.grid);
+
+  const [history, setHistory] = useState<HistoryState[]>([
+    { grid: initialData.grid, height: initialData.height, width: initialData.width },
+  ]);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(0);
 
   const pushToHistory = useCallback(
@@ -44,33 +87,6 @@ export const useGridEditor = () => {
     [history, currentHistoryIndex]
   );
 
-  // URLからの初期化
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const h = params.get('h');
-      const w = params.get('w');
-      const encodedData = params.get('data');
-
-      if (h && w && encodedData) {
-        const newHeight = parseInt(h, 10);
-        const newWidth = parseInt(w, 10);
-
-        if (!isNaN(newHeight) && !isNaN(newWidth) && newHeight > 0 && newWidth > 0) {
-          const newGrid = decodeGrid(newHeight, newWidth, encodedData);
-          if (newGrid.length === newHeight && newGrid[0].length === newWidth) {
-            setHeight(h);
-            setWidth(w);
-            setGrid(newGrid);
-            setHistory([{ grid: newGrid, height: h, width: w }]);
-            setCurrentHistoryIndex(0);
-          }
-        }
-      }
-          } catch (error) {
-          console.error('Failed to decode grid data from URL:', error);
-        }
-      }, []); // 初回のみ
   const undo = useCallback(() => {
     if (currentHistoryIndex > 0) {
       const newIndex = currentHistoryIndex - 1;

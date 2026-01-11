@@ -41,7 +41,6 @@ export default tseslint.config(
       ],
       ...react.configs.recommended.rules,
       ...react.configs['jsx-runtime'].rules,
-      'react-hooks/set-state-in-effect': 'off',
     },
   },
 );
