@@ -6,7 +6,7 @@
 
 ## 技術スタック
 
-*   **フロントエンド:** React (Create React App), Material-UI
+*   **フロントエンド:** React, Vite, Material-UI
 
 ## 機能
 
@@ -36,7 +36,7 @@
 ## 実行方法
 
 ```sh
-npm start
+npm run dev
 ```
 
 ## 補足
